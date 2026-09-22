@@ -7,15 +7,6 @@ export type RoleId =
   | "researcher"
   | "curious";
 
-export interface Persona {
-  id: RoleId;
-  label: string;
-  tagline: string;
-  pitch: string;
-  firstWin: { label: string; slug: string; minutes: number };
-  moduleSlugs: string[];
-}
-
 export interface Module {
   slug: string;
   title: string;
@@ -26,94 +17,36 @@ export interface Module {
   sections: { heading: string; body: string[] }[];
 }
 
-export const personas: Persona[] = [
-  {
-    id: "executive",
-    label: "Executive / Business Leader",
-    tagline: "Risk exposure & investment focus",
-    pitch:
-      "Your board is asking about the PQC migration. Before you can answer, you need to know what \"classic\" crypto your organisation actually depends on today.",
-    firstWin: { label: "See what's actually at risk", slug: "key-sizes-and-security-levels", minutes: 8 },
-    moduleSlugs: ["rsa-public-key", "quantum-threat-shor", "key-sizes-and-security-levels"],
-  },
-  {
-    id: "grc",
-    label: "GRC / Risk & Compliance",
-    tagline: "Obligations, inventory & evidence focus",
-    pitch:
-      "Auditors want a cryptographic bill of materials. Know which algorithms are in scope before you can attest to anything.",
-    firstWin: { label: "Map the algorithms you must inventory", slug: "tls-in-practice", minutes: 10 },
-    moduleSlugs: ["tls-in-practice", "key-sizes-and-security-levels", "hash-functions-and-signatures"],
-  },
-  {
-    id: "developer",
-    label: "Developer / Engineer",
-    tagline: "Implementation & protocol focus",
-    pitch:
-      "RSA, AES, ECDSA and SHA-2 are already in every library you import. Understand what they actually do before you touch a crypto API.",
-    firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 12 },
-    moduleSlugs: [
-      "symmetric-key-aes",
-      "rsa-public-key",
-      "elliptic-curve-cryptography",
-      "diffie-hellman-key-exchange",
-      "hash-functions-and-signatures",
-      "tls-in-practice",
-    ],
-  },
-  {
-    id: "architect",
-    label: "Security Architect",
-    tagline: "System & infrastructure focus",
-    pitch:
-      "Every PKI, VPN and TLS terminator you've designed rests on the same handful of primitives. Get the mental model right before you redesign anything.",
-    firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 10 },
-    moduleSlugs: [
-      "diffie-hellman-key-exchange",
-      "elliptic-curve-cryptography",
-      "hash-functions-and-signatures",
-      "tls-in-practice",
-      "key-sizes-and-security-levels",
-    ],
-  },
-  {
-    id: "itops",
-    label: "IT Ops / DevOps",
-    tagline: "Deploy & operate focus",
-    pitch:
-      "Certificates, cipher suites, key sizes — the settings you configure every day encode decades of cryptographic design. Know what they mean.",
-    firstWin: { label: "Understand what a cipher suite actually says", slug: "tls-in-practice", minutes: 10 },
-    moduleSlugs: ["symmetric-key-aes", "tls-in-practice", "key-sizes-and-security-levels"],
-  },
-  {
-    id: "researcher",
-    label: "Researcher / Academic",
-    tagline: "Comprehensive, no filtering",
-    pitch: "Open the full catalog. Every module, in order, with no persona filtering.",
-    firstWin: { label: "Start at the foundations", slug: "symmetric-key-aes", minutes: 10 },
-    moduleSlugs: [
-      "symmetric-key-aes",
-      "rsa-public-key",
-      "elliptic-curve-cryptography",
-      "diffie-hellman-key-exchange",
-      "hash-functions-and-signatures",
-      "tls-in-practice",
-      "key-sizes-and-security-levels",
-      "quantum-threat-shor",
-    ],
-  },
-  {
-    id: "curious",
-    label: "Curious Explorer",
-    tagline: "New to cryptography",
-    pitch:
-      "Your browser's padlock icon runs on math you use every day without seeing. Here's what's actually happening behind it.",
-    firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 12 },
-    moduleSlugs: ["symmetric-key-aes", "rsa-public-key", "tls-in-practice"],
-  },
-];
-
 export const modules: Module[] = [
+  {
+    slug: "math-foundations-modular-arithmetic",
+    title: "The math underneath: modular arithmetic & one-way functions",
+    summary:
+      "Every public-key algorithm in this catalog leans on the same idea: a calculation that's easy in one direction and effectively impossible to undo in the other.",
+    minutes: 8,
+    category: "Foundations",
+    tags: ["developer", "researcher", "curious"],
+    sections: [
+      {
+        heading: "One-way functions, informally",
+        body: [
+          "A one-way function is easy to compute in one direction and computationally infeasible to reverse. Multiplying two large primes together is easy; taking the product and recovering the original primes is hard. Raising a number to a power modulo another number is easy; working backward to find the exponent (the discrete logarithm) is hard. Nearly every public-key algorithm in this catalog is built on one of these two asymmetries.",
+        ],
+      },
+      {
+        heading: "Modular arithmetic in one paragraph",
+        body: [
+          "Modular arithmetic is arithmetic that wraps around, the way a clock wraps from 12 back to 1. \"7 mod 5\" means: divide 7 by 5 and keep the remainder — 2. Cryptography works almost entirely inside these wrapped, finite number systems (rather than the infinite integers) because they have exactly the algebraic structure needed: every operation stays inside a fixed, finite set of possible values, which is what makes both the 'easy direction' and the 'hard direction' well-defined and analyzable.",
+        ],
+      },
+      {
+        heading: "Trapdoors: a shortcut for the key-holder",
+        body: [
+          "A trapdoor function is a one-way function with a secret that makes the hard direction easy again — but only if you know the secret. RSA's trapdoor is knowledge of the two prime factors of the modulus; with them, decryption is a fast modular exponentiation, but without them, an attacker faces the full difficulty of factoring. This single idea — one-way in general, easy with a secret — is the mechanism that makes a public key public and a private key private.",
+        ],
+      },
+    ],
+  },
   {
     slug: "symmetric-key-aes",
     title: "Symmetric-key cryptography & AES",
@@ -154,6 +87,41 @@ export const modules: Module[] = [
     ],
   },
   {
+    slug: "stream-ciphers-chacha20",
+    title: "Stream ciphers & ChaCha20-Poly1305",
+    summary:
+      "Not every symmetric cipher works in fixed blocks. ChaCha20 generates a keystream instead — and paired with Poly1305, it's AES-GCM's fastest rival.",
+    minutes: 8,
+    category: "Symmetric-key",
+    tags: ["developer", "architect", "itops", "researcher"],
+    sections: [
+      {
+        heading: "Block ciphers vs. stream ciphers",
+        body: [
+          "AES is a block cipher: it transforms fixed 128-bit chunks. A stream cipher instead generates a pseudorandom keystream from the key and a nonce, then combines it with the plaintext one bit or byte at a time (almost always with XOR). Encryption and decryption are the identical operation — XOR the data with the same keystream again.",
+        ],
+      },
+      {
+        heading: "How ChaCha20 builds its keystream",
+        body: [
+          "ChaCha20, designed by Daniel J. Bernstein, generates its keystream by repeatedly mixing a 256-bit key, a counter, and a nonce through a sequence of addition, rotation, and XOR operations (ARX). Unlike AES, none of this depends on table lookups, which sidesteps a class of cache-timing side-channel attacks that have affected some AES software implementations on hardware without dedicated AES instructions.",
+        ],
+      },
+      {
+        heading: "Poly1305 and the AEAD pairing",
+        body: [
+          "ChaCha20 alone only provides confidentiality. Paired with the Poly1305 message authentication code, it becomes ChaCha20-Poly1305 — an AEAD (Authenticated Encryption with Associated Data) construction, functionally equivalent in purpose to AES-GCM: it encrypts and authenticates in one pass, producing a tag that detects any tampering.",
+        ],
+      },
+      {
+        heading: "Where it's actually used",
+        body: [
+          "ChaCha20-Poly1305 is a standard cipher suite in TLS 1.3, the default cipher for the WireGuard VPN protocol, and widely used on mobile devices and older or low-power hardware that lacks AES hardware acceleration (AES-NI), where ChaCha20 in pure software runs significantly faster and in constant time.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "rsa-public-key",
     title: "RSA & public-key cryptography",
     summary:
@@ -182,6 +150,41 @@ export const modules: Module[] = [
         body: [
           "Every attack on RSA either tries to factor n directly or tries to find a shortcut that avoids factoring. The best known classical factoring algorithm, the General Number Field Sieve, has sub-exponential running time — hard enough that factoring a 2048-bit RSA modulus is considered infeasible with any classical computer for the foreseeable future.",
           "This is precisely the assumption that Shor's algorithm breaks on a sufficiently large quantum computer — see the quantum threat module for why RSA is on every PQC migration roadmap.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "rsa-padding-oaep-pkcs1",
+    title: "RSA padding: OAEP, PKCS#1 v1.5, and why raw RSA fails",
+    summary:
+      "Textbook RSA is deterministic and malleable. Padding schemes are what actually make RSA encryption and signing safe to use in the real world.",
+    minutes: 9,
+    category: "Public-key",
+    tags: ["developer", "architect", "researcher"],
+    sections: [
+      {
+        heading: "Why raw RSA is insecure",
+        body: [
+          "Applying the RSA formula directly to a message (\"textbook RSA\") has several fatal properties for real-world use: it's deterministic, so the same plaintext always produces the same ciphertext, leaking whether two messages match; it's malleable, so an attacker can manipulate a ciphertext in predictable ways that transform the underlying plaintext; and small messages encrypted with a small public exponent can sometimes be recovered directly by taking a root, with no key-breaking required.",
+        ],
+      },
+      {
+        heading: "PKCS#1 v1.5 and the Bleichenbacher attack",
+        body: [
+          "PKCS#1 v1.5 padding, standardized in the 1990s, prepends structured random padding before encryption to defeat determinism. In 1998, Daniel Bleichenbacher showed that a server which distinguishes \"valid padding\" from \"invalid padding\" errors leaks enough information, through repeated queries, to decrypt a ciphertext entirely — a padding oracle attack. Variants of this attack (including the 2017 ROBOT attack) were still being found against production TLS servers nearly two decades later, because the padding-check logic is easy to implement subtly wrong.",
+        ],
+      },
+      {
+        heading: "OAEP and PSS: the modern replacements",
+        body: [
+          "OAEP (Optimal Asymmetric Encryption Padding) is the modern standard for RSA encryption, built to be provably secure against chosen-ciphertext attacks using randomized padding derived from hash functions. For signatures, the analogous modern scheme is RSA-PSS (Probabilistic Signature Scheme), which similarly replaces the deterministic padding of PKCS#1 v1.5 signatures with a randomized construction.",
+        ],
+      },
+      {
+        heading: "The practical takeaway",
+        body: [
+          "Padding is not a minor implementation detail bolted onto RSA — it's load-bearing security logic, and it's exactly the kind of code where a subtle timing or error-message difference becomes a full key-recovery attack. This is why every serious cryptography guideline says the same thing: never implement RSA padding yourself, and use a vetted, actively maintained cryptographic library.",
         ],
       },
     ],
@@ -286,6 +289,135 @@ export const modules: Module[] = [
     ],
   },
   {
+    slug: "key-derivation-functions",
+    title: "Password hashing & key derivation: PBKDF2, bcrypt, scrypt, Argon2",
+    summary:
+      "A cryptographic hash is too fast for passwords. KDFs deliberately slow things down — and not all of them do it the same way.",
+    minutes: 9,
+    category: "Foundations",
+    tags: ["developer", "architect", "grc", "researcher"],
+    sections: [
+      {
+        heading: "Why SHA-256 alone is the wrong tool for passwords",
+        body: [
+          "A general-purpose hash function like SHA-256 is designed to be fast — that's a feature for verifying file integrity and a serious liability for storing passwords. Modern GPUs and ASICs can compute billions of SHA-256 hashes per second, making brute-force and dictionary attacks against a stolen password database dramatically cheap unless the hashing itself is deliberately expensive.",
+          "Salting — appending a unique random value to each password before hashing — is a separate, complementary defense: it defeats precomputed rainbow-table attacks by ensuring identical passwords don't produce identical hashes, but it does nothing to slow down an attacker targeting one specific hash.",
+        ],
+      },
+      {
+        heading: "PBKDF2, bcrypt, and scrypt",
+        body: [
+          "PBKDF2 slows things down by applying a hash function repeatedly, thousands or millions of times, controlled by a tunable iteration count — simple and standard, but cheaply parallelizable on GPUs. bcrypt, based on the Blowfish cipher, adds an adjustable \"cost factor\" and has been a de facto standard since 1999. scrypt goes further, deliberately requiring large amounts of memory as well as computation (memory-hard), which is significantly more expensive to parallelize on specialized hardware.",
+        ],
+      },
+      {
+        heading: "Argon2: the current recommendation",
+        body: [
+          "Argon2 won the Password Hashing Competition in 2015 and is now the generally recommended choice for new systems. Like scrypt, it's memory-hard, with independently tunable time, memory, and parallelism costs, and comes in variants (Argon2id is typically recommended) balancing resistance to both GPU/ASIC attacks and side-channel attacks.",
+        ],
+      },
+      {
+        heading: "A different job from HKDF",
+        body: [
+          "It's worth distinguishing this family from key derivation functions like HKDF, used to derive multiple cryptographic keys from a single shared secret (for example, inside a TLS or Signal Protocol handshake). HKDF is fast by design — it's deriving keys from data that's already high-entropy, not stretching a low-entropy human password, so slowness would add cost without adding security.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "digital-certificates-x509",
+    title: "X.509 certificates & the PKI trust hierarchy",
+    summary:
+      "A certificate is just a signed statement binding a public key to an identity. Here's what's actually inside one, and how revocation works.",
+    minutes: 10,
+    category: "Protocols",
+    tags: ["architect", "itops", "grc", "developer"],
+    sections: [
+      {
+        heading: "Anatomy of a certificate",
+        body: [
+          "An X.509 certificate is a structured, digitally signed document binding a public key to an identity (a domain name, an organization, a person). Its key fields include the subject (who the certificate identifies, including Subject Alternative Names for the domains it covers), the issuer (which Certificate Authority signed it), the public key itself, a validity period, and the issuer's signature over all of it.",
+        ],
+      },
+      {
+        heading: "The chain of trust",
+        body: [
+          "Certificates form a chain: a leaf certificate (a website's) is signed by an intermediate CA, whose own certificate is signed by a root CA. Root CA certificates are the trust anchors — pre-installed in operating systems and browsers — and everything else is trusted only because it traces back, signature by signature, to one of them. This is the same hash-then-sign mechanism covered in the hashing and signatures module, applied recursively.",
+        ],
+      },
+      {
+        heading: "Revocation: harder than it sounds",
+        body: [
+          "A certificate's validity period isn't the only way it can stop being trusted — it can be revoked early, for example if its private key is compromised. Certificate Revocation Lists (CRLs) are downloadable lists of revoked certificate serial numbers; OCSP (Online Certificate Status Protocol) lets a client ask a CA in real time whether a specific certificate is still valid. Both have practical weaknesses (CRLs grow large and go stale; live OCSP queries leak browsing metadata to the CA and can fail open if the CA is unreachable), which is why OCSP stapling — where the server itself periodically fetches and attaches a signed OCSP response — has become the preferred approach.",
+        ],
+      },
+      {
+        heading: "The shift to short-lived certificates",
+        body: [
+          "Let's Encrypt and the ACME protocol popularized free, automated certificate issuance with much shorter validity periods (90 days, versus the multi-year certificates common before). Shorter lifetimes shrink the exposure window if a key is compromised and reduce reliance on revocation infrastructure altogether — the certificate simply expires soon regardless.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "jwt-and-api-auth",
+    title: "JSON Web Tokens & API authentication",
+    summary:
+      "JWTs put a signed claim in every request header. They're everywhere in modern APIs — and a few well-known implementation mistakes keep recurring.",
+    minutes: 8,
+    category: "Protocols",
+    tags: ["developer", "architect"],
+    sections: [
+      {
+        heading: "Structure",
+        body: [
+          "A JSON Web Token (JWT) is three base64url-encoded segments separated by dots: a header (naming the signing algorithm), a payload (the claims — arbitrary data such as user ID and expiry), and a signature over the first two segments. The signature can be produced with a symmetric HMAC (HS256) or an asymmetric algorithm like RSA or ECDSA (RS256, ES256).",
+        ],
+      },
+      {
+        heading: "What the signature does and doesn't guarantee",
+        body: [
+          "Verifying a JWT's signature confirms the claims haven't been altered since signing and that they were signed by a holder of the corresponding key — it says nothing about whether the token has since been revoked or is still meant to be valid, which is why expiry (exp) claims and short lifetimes matter. The payload is only encoded, not encrypted: anyone can base64-decode it and read the claims, so secrets never belong there.",
+        ],
+      },
+      {
+        heading: "Well-known implementation pitfalls",
+        body: [
+          "The \"alg: none\" vulnerability let an attacker submit a token whose header claims no signature algorithm was used, and some early libraries would accept it as valid. A related algorithm-confusion attack tricks a server configured to verify RS256 (asymmetric) tokens into instead verifying an attacker-crafted HS256 token using the server's own public key as the HMAC secret — since the public key is, by definition, public. Modern libraries mitigate both by requiring the verifier to pin the expected algorithm rather than trusting the token's own header.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "ssh-protocol",
+    title: "SSH: key exchange, host keys, and authentication",
+    summary:
+      "The protocol behind every remote login and git push combines the same primitives as TLS, arranged slightly differently.",
+    minutes: 8,
+    category: "Protocols",
+    tags: ["developer", "itops", "architect"],
+    sections: [
+      {
+        heading: "The SSH handshake",
+        body: [
+          "An SSH connection begins with a key exchange — typically ECDH over Curve25519 (curve25519-sha256) in modern implementations — to establish a shared session key, followed by the server presenting its host key so the client can verify it's connecting to the right machine, and finally derivation of symmetric session keys (commonly AES or ChaCha20) used for the rest of the session.",
+        ],
+      },
+      {
+        heading: "Trust-on-first-use vs. certificate authorities",
+        body: [
+          "Unlike TLS, which relies on a global PKI of Certificate Authorities, SSH's default host key model is trust-on-first-use: the first time you connect to a server, its host key fingerprint is recorded, and every future connection is checked against that record — which is exactly what the \"the authenticity of host X can't be established\" warning is asking you to verify manually. Larger organizations often layer an SSH certificate authority on top, having a trusted CA sign both host keys and user keys, closer to the TLS model.",
+        ],
+      },
+      {
+        heading: "User authentication",
+        body: [
+          "Public-key authentication — where the client proves possession of a private key whose matching public key is listed in the server's authorized_keys — is the recommended alternative to password authentication. Modern SSH deployments increasingly default to Ed25519 keys (a specific, fast elliptic-curve signature scheme) over RSA, for smaller key size and simpler, more misuse-resistant implementation.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "tls-in-practice",
     title: "TLS in practice: how HTTPS puts it all together",
     summary:
@@ -312,6 +444,35 @@ export const modules: Module[] = [
         heading: "Certificate chains and trust",
         body: [
           "Your browser trusts a server's certificate because it's signed by a Certificate Authority (CA) whose own certificate is pre-installed as a trust anchor. This forms a chain: your leaf certificate is signed by an intermediate CA, which is signed by a root CA your browser already trusts. Break any link — an expired cert, an untrusted CA, a hostname mismatch — and the connection is refused.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "secure-messaging-signal-protocol",
+    title: "End-to-end encrypted messaging: the Signal Protocol",
+    summary:
+      "TLS protects data in transit to a server. The Signal Protocol's Double Ratchet goes further — encrypting so not even the server operator can read your messages.",
+    minutes: 10,
+    category: "Protocols",
+    tags: ["developer", "architect", "curious", "researcher"],
+    sections: [
+      {
+        heading: "Transport encryption vs. end-to-end encryption",
+        body: [
+          "TLS (covered in the previous module) encrypts data between a client and a server — the server itself sees the plaintext. End-to-end encryption (E2EE) encrypts data between two end users, such that the server relaying it, even if fully compromised, cannot read the content. Signal, and protocols derived from it (including WhatsApp's), are the most widely deployed implementations of this model for messaging.",
+        ],
+      },
+      {
+        heading: "X3DH: agreeing on a key while offline",
+        body: [
+          "Messaging has a problem TLS doesn't: the recipient may not be online to participate in a live key exchange. The Extended Triple Diffie-Hellman (X3DH) protocol solves this by having each user publish a set of pre-generated key material to a server in advance, so a sender can compute a shared secret and send a first encrypted message even if the recipient is offline at that moment.",
+        ],
+      },
+      {
+        heading: "The Double Ratchet",
+        body: [
+          "After the initial key agreement, the Double Ratchet algorithm derives a new encryption key for every single message, combining a Diffie-Hellman ratchet (fresh key material exchanged periodically) with a symmetric-key ratchet (a one-way chain deriving each message key from the last). The result is forward secrecy at the level of individual messages — compromising one message's key doesn't expose earlier ones — plus post-compromise security: if an attacker briefly compromises a device's state, the ratchet's ongoing Diffie-Hellman exchanges eventually heal the session back to a secure state.",
         ],
       },
     ],
@@ -348,6 +509,105 @@ export const modules: Module[] = [
     ],
   },
   {
+    slug: "random-number-generation",
+    title: "Random number generation: the primitive everything else depends on",
+    summary:
+      "Every key, nonce, and IV in this catalog assumes truly unpredictable randomness. When that assumption breaks, everything built on top breaks with it.",
+    minutes: 8,
+    category: "Foundations",
+    tags: ["developer", "architect", "itops", "researcher"],
+    sections: [
+      {
+        heading: "CSPRNGs vs. ordinary randomness",
+        body: [
+          "A cryptographically secure pseudorandom number generator (CSPRNG) must satisfy a stronger property than statistical randomness: even seeing part of its output must give an attacker no useful ability to predict the rest, or to reconstruct its internal state. An ordinary PRNG used for simulations or games (like the Mersenne Twister) is often statistically excellent but trivially predictable once enough output is observed — it must never be used for keys, nonces, or IVs.",
+        ],
+      },
+      {
+        heading: "Where entropy actually comes from",
+        body: [
+          "Operating systems gather unpredictability (entropy) from physical sources — hardware interrupt timing, disk I/O timing, dedicated hardware RNGs on modern CPUs — and feed it into a CSPRNG exposed through an OS API: /dev/urandom on Linux and macOS, CryptGenRandom/BCryptGenRandom on Windows. Application code should always call these platform APIs rather than implementing its own randomness.",
+        ],
+      },
+      {
+        heading: "When it goes wrong: real incidents",
+        body: [
+          "In 2008, a patch to Debian's OpenSSL package accidentally removed nearly all sources of entropy from its key generation, causing it to produce keys from a pool of only about 32,768 possibilities for over a year before discovery — every key generated on an affected system was practically guessable. The 2010 Sony PlayStation 3 incident (referenced in the ECC module) was a related but distinct failure: not weak entropy, but reuse of the exact same \"random\" nonce for every ECDSA signature, which directly exposed the signing private key through simple algebra.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "side-channel-and-timing-attacks",
+    title: "Side-channel & timing attacks: when the math is fine but the implementation isn't",
+    summary:
+      "A cryptographic algorithm can be mathematically unbreakable and still leak its secret key through how long it takes to run.",
+    minutes: 9,
+    category: "Practice",
+    tags: ["developer", "architect", "researcher"],
+    sections: [
+      {
+        heading: "What a side channel is",
+        body: [
+          "A side-channel attack recovers secret information not by attacking the mathematics of an algorithm, but by observing something about how it runs: how long an operation takes, how much power a chip draws, which memory addresses get accessed (and therefore which CPU cache lines get touched), or even electromagnetic emissions. None of these leaks require breaking AES or RSA mathematically — they exploit the physical reality of the implementation.",
+        ],
+      },
+      {
+        heading: "Timing attacks in TLS: Lucky Thirteen",
+        body: [
+          "The 2013 Lucky Thirteen attack exploited tiny timing differences in how some TLS implementations processed CBC-mode padding — a valid-padding check took a measurably different amount of time than an invalid one, letting an attacker who could send many requests and measure response timing gradually recover plaintext, echoing the Bleichenbacher padding-oracle pattern covered in the RSA padding module but at the symmetric-cipher layer.",
+        ],
+      },
+      {
+        heading: "Cache-timing attacks",
+        body: [
+          "Early software AES implementations used lookup tables for the SubBytes step. Because CPU caches are shared and timing-observable, an attacker running unrelated code on the same physical machine (relevant in cloud/virtualized environments) could sometimes infer which table entries were accessed, and from that recover key bits — a cache-timing attack. This is one of the reasons modern CPUs ship dedicated AES instructions (AES-NI), which execute in constant time regardless of data.",
+        ],
+      },
+      {
+        heading: "The mitigation: constant-time code",
+        body: [
+          "The general defense is constant-time programming: writing cryptographic code so its execution time, memory access pattern, and power draw never depend on secret data — no data-dependent branches, no data-dependent array indexing. This is precisely why cryptography guidelines insist on vetted libraries over custom implementations: constant-time discipline is easy to state and notoriously easy to violate by accident.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "blockchain-and-signatures",
+    title: "Cryptography inside blockchains: hashing, Merkle trees, and signatures",
+    summary:
+      "Bitcoin and Ethereum don't invent new cryptography — they compose the same primitives in this catalog into a specific, tamper-evident structure.",
+    minutes: 9,
+    category: "Practice",
+    tags: ["developer", "curious", "researcher"],
+    sections: [
+      {
+        heading: "Hash chains",
+        body: [
+          "Each block in a blockchain includes the cryptographic hash of the previous block's header. Changing anything in an earlier block changes its hash, which no longer matches what the next block recorded, which cascades forward through every subsequent block — making tampering with history computationally evident, not just inconvenient.",
+        ],
+      },
+      {
+        heading: "Merkle trees",
+        body: [
+          "Rather than hashing an entire block's transaction list as one blob, transactions are organized into a Merkle tree: pairs of transaction hashes are hashed together, then pairs of those results, repeatedly, up to a single root hash stored in the block header. This lets a client prove a specific transaction is included in a block by presenting only a small path of hashes (a Merkle proof) rather than downloading every transaction in the block.",
+        ],
+      },
+      {
+        heading: "ECDSA and self-custody",
+        body: [
+          "Bitcoin and Ethereum both use ECDSA (over the secp256k1 curve) to sign transactions, directly applying the signature module covered earlier: whoever holds the private key can produce a valid signature authorizing a transaction, and there's no third party who can reset or recover it. Losing the private key means losing access to the funds permanently — there's no password-reset flow, because there's no central authority to appeal to.",
+        ],
+      },
+      {
+        heading: "The specific PQC angle for blockchains",
+        body: [
+          "Blockchains have an unusual quantum-risk profile worth noting: an ECDSA public key is only revealed on-chain the moment its owner first spends from that address. Coins that have never been spent from expose only a hash of the public key, adding a layer of protection — but any address that has ever sent a transaction has its full public key permanently on the public ledger, available today to be attacked by a future quantum computer running Shor's algorithm.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "quantum-threat-shor",
     title: "Why quantum computers break this: Shor's algorithm",
     summary:
@@ -367,7 +627,7 @@ export const modules: Module[] = [
         heading: "\"Sufficiently large\" is doing a lot of work",
         body: [
           "Breaking RSA-2048 with Shor's algorithm is estimated to require several thousand logical (fully error-corrected) qubits — which, given current error rates, could require millions of physical qubits once error correction overhead is included. Today's largest quantum computers have on the order of hundreds to low thousands of physical, noisy qubits. No quantum computer today can run Shor's algorithm against real-world key sizes.",
-          "That gap is exactly why migration is happening now rather than later: data encrypted today with RSA or ECC can be recorded by an adversary and decrypted retroactively once a capable quantum computer exists — a risk known as \"harvest now, decrypt later.\" Anything that needs confidentiality for years is exposed today, even if the quantum computer that breaks it doesn't exist yet.",
+          "That gap doesn't mean the risk is purely theoretical for now, though — see the next module on why data encrypted today can already be at risk.",
         ],
       },
       {
@@ -379,6 +639,162 @@ export const modules: Module[] = [
       },
     ],
   },
+  {
+    slug: "harvest-now-decrypt-later",
+    title: "Harvest now, decrypt later: the risk that's already here",
+    summary:
+      "You don't need a working quantum computer today to be at risk today. Anything encrypted now with RSA or ECC can simply be recorded and decrypted later.",
+    minutes: 7,
+    category: "Practice",
+    tags: ["executive", "grc", "architect", "researcher"],
+    sections: [
+      {
+        heading: "The attack doesn't need quantum hardware yet",
+        body: [
+          "\"Harvest now, decrypt later\" describes a passive attack that's already executable with today's technology: an adversary records encrypted traffic now — TLS sessions, VPN traffic, stored backups — and simply holds onto the ciphertext, waiting until a cryptographically relevant quantum computer exists to decrypt the RSA or ECDH key exchange that protected it. The recording requires no quantum computer at all; only the eventual decryption does.",
+        ],
+      },
+      {
+        heading: "Who this actually threatens",
+        body: [
+          "This risk is proportional to how long data needs to stay confidential. State secrets, medical records, trade secrets, and long-term personal data are exposed today if intercepted today, because they still need protection years or decades from now. A single ephemeral session that's operationally irrelevant a week later carries far less exposure — though it's worth noting exactly which key exchange protected it, since forward-secret ECDHE sessions are still individually vulnerable to this specific harvesting risk even though each session used a fresh key.",
+        ],
+      },
+      {
+        heading: "Why this drives migration timing, not just eventual planning",
+        body: [
+          "This is the practical argument organizations use for starting PQC migration — specifically hybrid key exchange, combining a classical algorithm like ECDH with a post-quantum algorithm like ML-KEM in the same handshake — well before a quantum computer capable of Shor's algorithm exists, rather than waiting for one to appear. Data harvested today under purely classical protection is already, in effect, on a countdown.",
+        ],
+      },
+    ],
+  },
+];
+
+export interface Persona {
+  id: RoleId;
+  label: string;
+  tagline: string;
+  pitch: string;
+  firstWin: { label: string; slug: string; minutes: number };
+  moduleSlugs: string[];
+}
+
+export const personas: Persona[] = [
+  {
+    id: "executive",
+    label: "Executive / Business Leader",
+    tagline: "Risk exposure & investment focus",
+    pitch:
+      "Your board is asking about the PQC migration. Before you can answer, you need to know what \"classic\" crypto your organisation actually depends on today.",
+    firstWin: { label: "See what's actually at risk", slug: "key-sizes-and-security-levels", minutes: 8 },
+    moduleSlugs: [
+      "key-sizes-and-security-levels",
+      "rsa-public-key",
+      "quantum-threat-shor",
+      "harvest-now-decrypt-later",
+    ],
+  },
+  {
+    id: "grc",
+    label: "GRC / Risk & Compliance",
+    tagline: "Obligations, inventory & evidence focus",
+    pitch:
+      "Auditors want a cryptographic bill of materials. Know which algorithms are in scope before you can attest to anything.",
+    firstWin: { label: "Map the algorithms you must inventory", slug: "tls-in-practice", minutes: 13 },
+    moduleSlugs: [
+      "tls-in-practice",
+      "key-sizes-and-security-levels",
+      "hash-functions-and-signatures",
+      "digital-certificates-x509",
+      "key-derivation-functions",
+      "harvest-now-decrypt-later",
+    ],
+  },
+  {
+    id: "developer",
+    label: "Developer / Engineer",
+    tagline: "Implementation & protocol focus",
+    pitch:
+      "RSA, AES, ECDSA and SHA-2 are already in every library you import. Understand what they actually do before you touch a crypto API.",
+    firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 13 },
+    moduleSlugs: [
+      "math-foundations-modular-arithmetic",
+      "symmetric-key-aes",
+      "stream-ciphers-chacha20",
+      "rsa-public-key",
+      "rsa-padding-oaep-pkcs1",
+      "elliptic-curve-cryptography",
+      "diffie-hellman-key-exchange",
+      "hash-functions-and-signatures",
+      "key-derivation-functions",
+      "jwt-and-api-auth",
+      "tls-in-practice",
+      "random-number-generation",
+      "side-channel-and-timing-attacks",
+    ],
+  },
+  {
+    id: "architect",
+    label: "Security Architect",
+    tagline: "System & infrastructure focus",
+    pitch:
+      "Every PKI, VPN and TLS terminator you've designed rests on the same handful of primitives. Get the mental model right before you redesign anything.",
+    firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 9 },
+    moduleSlugs: [
+      "diffie-hellman-key-exchange",
+      "elliptic-curve-cryptography",
+      "hash-functions-and-signatures",
+      "digital-certificates-x509",
+      "tls-in-practice",
+      "ssh-protocol",
+      "secure-messaging-signal-protocol",
+      "key-sizes-and-security-levels",
+      "side-channel-and-timing-attacks",
+      "harvest-now-decrypt-later",
+    ],
+  },
+  {
+    id: "itops",
+    label: "IT Ops / DevOps",
+    tagline: "Deploy & operate focus",
+    pitch:
+      "Certificates, cipher suites, key sizes — the settings you configure every day encode decades of cryptographic design. Know what they mean.",
+    firstWin: { label: "Understand what a cipher suite actually says", slug: "tls-in-practice", minutes: 13 },
+    moduleSlugs: [
+      "symmetric-key-aes",
+      "stream-ciphers-chacha20",
+      "tls-in-practice",
+      "digital-certificates-x509",
+      "ssh-protocol",
+      "key-sizes-and-security-levels",
+      "random-number-generation",
+    ],
+  },
+  {
+    id: "researcher",
+    label: "Researcher / Academic",
+    tagline: "Comprehensive, no filtering",
+    pitch: "Open the full catalog. Every module, in order, with no persona filtering.",
+    firstWin: { label: "Start at the foundations", slug: "math-foundations-modular-arithmetic", minutes: 8 },
+    moduleSlugs: modules.map((m) => m.slug),
+  },
+  {
+    id: "curious",
+    label: "Curious Explorer",
+    tagline: "New to cryptography",
+    pitch:
+      "Your browser's padlock icon runs on math you use every day without seeing. Here's what's actually happening behind it.",
+    firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 13 },
+    moduleSlugs: [
+      "math-foundations-modular-arithmetic",
+      "symmetric-key-aes",
+      "rsa-public-key",
+      "tls-in-practice",
+      "hash-functions-and-signatures",
+      "blockchain-and-signatures",
+      "secure-messaging-signal-protocol",
+    ],
+  },
 ];
 
 export function getModule(slug: string): Module | undefined {
@@ -387,6 +803,14 @@ export function getModule(slug: string): Module | undefined {
 
 export function getPersona(id: string): Persona | undefined {
   return personas.find((p) => p.id === id);
+}
+
+export function getPersonaTrackStats(persona: Persona): { count: number; minutes: number } {
+  const minutes = persona.moduleSlugs.reduce((sum, slug) => {
+    const mod = getModule(slug);
+    return sum + (mod?.minutes ?? 0);
+  }, 0);
+  return { count: persona.moduleSlugs.length, minutes };
 }
 
 export const roleLabels: Record<RoleId, string> = Object.fromEntries(

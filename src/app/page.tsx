@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { personas } from "@/lib/content";
+import { personas, getPersonaTrackStats, modules } from "@/lib/content";
 
 export default function Home() {
   return (
@@ -17,6 +17,7 @@ export default function Home() {
           is going anywhere overnight. Understand what it actually does before you plan around
           what comes next.
         </p>
+        <p className="mt-3 text-sm text-muted">{modules.length} modules · growing catalog</p>
       </div>
 
       <div className="mt-16">
@@ -27,25 +28,31 @@ export default function Home() {
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {personas.map((p) => (
-            <Link
-              key={p.id}
-              href={`/learn?role=${p.id}`}
-              className="group flex flex-col rounded-lg border border-border bg-surface p-6 transition hover:border-accent hover:bg-surface-hover"
-            >
-              <span className="text-xs font-medium uppercase tracking-wide text-accent">
-                {p.tagline}
-              </span>
-              <span className="mt-2 text-lg font-semibold">{p.label}</span>
-              <p className="mt-2 flex-1 text-sm text-muted">{p.pitch}</p>
-              <span className="mt-4 text-sm font-medium text-foreground">
-                First win — {p.firstWin.label} · {p.firstWin.minutes} min
-                <span className="ml-1 inline-block transition group-hover:translate-x-1">
-                  →
+          {personas.map((p) => {
+            const stats = getPersonaTrackStats(p);
+            return (
+              <Link
+                key={p.id}
+                href={`/learn?role=${p.id}`}
+                className="group flex flex-col rounded-lg border border-border bg-surface p-6 transition hover:border-accent hover:bg-surface-hover"
+              >
+                <span className="text-xs font-medium uppercase tracking-wide text-accent">
+                  {p.tagline}
                 </span>
-              </span>
-            </Link>
-          ))}
+                <span className="mt-2 text-lg font-semibold">{p.label}</span>
+                <p className="mt-2 flex-1 text-sm text-muted">{p.pitch}</p>
+                <span className="mt-4 text-sm font-medium text-foreground">
+                  First win — {p.firstWin.label} · {p.firstWin.minutes} min
+                  <span className="ml-1 inline-block transition group-hover:translate-x-1">
+                    →
+                  </span>
+                </span>
+                <span className="mt-1 text-xs text-muted">
+                  then {stats.count} modules · {stats.minutes} min
+                </span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="mt-6">
@@ -74,7 +81,7 @@ export default function Home() {
         >
           <h3 className="font-semibold">Assess</h3>
           <p className="mt-2 text-sm text-muted">
-            Coming soon — a quick check of what your systems actually rely on.
+            Eight quick questions about what you run today, mapped to a prioritized reading list.
           </p>
         </Link>
         <Link

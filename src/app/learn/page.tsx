@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getPersona, modules, personas } from "@/lib/content";
+import { getPersona, getPersonaTrackStats, modules, personas } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Learn — Classical Crypto Today",
@@ -22,8 +22,9 @@ export default async function LearnPage(props: PageProps<"/learn">) {
         The full module catalog
       </h1>
       <p className="mt-4 max-w-2xl text-muted">
-        Eight modules covering the cryptography behind every HTTPS connection: how it works,
-        why it&apos;s trusted, and why it&apos;s the thing post-quantum cryptography replaces.
+        {modules.length} modules covering the cryptography behind every HTTPS connection, SSH
+        session, and signed transaction: how it works, why it&apos;s trusted, and why it&apos;s
+        the thing post-quantum cryptography replaces.
       </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-2">
@@ -62,6 +63,10 @@ export default async function LearnPage(props: PageProps<"/learn">) {
           >
             Start with your first win: {persona.firstWin.label} ({persona.firstWin.minutes} min) →
           </Link>
+          <p className="mt-2 text-xs text-muted">
+            Full track: {getPersonaTrackStats(persona).count} modules ·{" "}
+            {getPersonaTrackStats(persona).minutes} min
+          </p>
         </div>
       )}
 
