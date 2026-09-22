@@ -1,69 +1,93 @@
-import Image from "next/image";
+import Link from "next/link";
+import { personas } from "@/lib/content";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="mx-auto max-w-6xl px-6 py-16">
+      <div className="max-w-3xl">
+        <p className="text-sm font-medium uppercase tracking-widest text-accent">
+          Classical cryptography, explained and grounded
+        </p>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+          The cryptography running the internet, right now.
+        </h1>
+        <p className="mt-6 text-lg text-muted">
+          RSA. ECC. Diffie-Hellman. AES. SHA-2. TLS. This is the &ldquo;classical&rdquo;
+          cryptography that post-quantum algorithms are set to replace — and almost none of it
+          is going anywhere overnight. Understand what it actually does before you plan around
+          what comes next.
+        </p>
+      </div>
+
+      <div className="mt-16">
+        <h2 className="text-xl font-semibold">Who&apos;s asking?</h2>
+        <p className="mt-2 max-w-2xl text-muted">
+          Pick the closest fit and we&apos;ll lead with what&apos;s most useful to you. You&apos;ll
+          still see everything — nothing gets hidden, and you can change this on any page.
+        </p>
+
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {personas.map((p) => (
+            <Link
+              key={p.id}
+              href={`/learn?role=${p.id}`}
+              className="group flex flex-col rounded-lg border border-border bg-surface p-6 transition hover:border-accent hover:bg-surface-hover"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              <span className="text-xs font-medium uppercase tracking-wide text-accent">
+                {p.tagline}
+              </span>
+              <span className="mt-2 text-lg font-semibold">{p.label}</span>
+              <p className="mt-2 flex-1 text-sm text-muted">{p.pitch}</p>
+              <span className="mt-4 text-sm font-medium text-foreground">
+                First win — {p.firstWin.label} · {p.firstWin.minutes} min
+                <span className="ml-1 inline-block transition group-hover:translate-x-1">
+                  →
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-6">
+          <Link
+            href="/learn"
+            className="text-sm font-medium text-muted underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-accent"
+          >
+            Not sure, or don&apos;t want to commit? See the full catalog, unfiltered →
+          </Link>
+        </div>
+      </div>
+
+      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <Link
+          href="/explore"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Explore</h3>
+          <p className="mt-2 text-sm text-muted">
+            Every topic on the site in plain words, with a first stop for each.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        </Link>
+        <Link
+          href="/assess"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Assess</h3>
+          <p className="mt-2 text-sm text-muted">
+            Coming soon — a quick check of what your systems actually rely on.
+          </p>
+        </Link>
+        <Link
+          href="/learn"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Learn</h3>
+          <p className="mt-2 text-sm text-muted">
+            The full module catalog — symmetric crypto, public-key crypto, and how TLS
+            combines them.
+          </p>
+        </Link>
+      </div>
     </div>
   );
 }
