@@ -22,7 +22,18 @@ export type DiagramSpec =
     }
   | { type: "merkle" }
   | { type: "grid"; title?: string; rows: string[][]; caption?: string }
-  | { type: "ec-point-addition" };
+  | { type: "ec-point-addition" }
+  | {
+      type: "swimlane";
+      title?: string;
+      leftActor: string;
+      rightActor: string;
+      messages: { from: "left" | "right"; label: string }[];
+      caption?: string;
+    }
+  | { type: "pipeline"; title?: string; steps: string[]; loopLabel?: string; caption?: string }
+  | { type: "gcm" }
+  | { type: "oaep" };
 
 export interface Section {
   heading: string;
@@ -134,6 +145,17 @@ export const modules: Module[] = [
             { label: "MixColumns", detail: "Each column is mixed via matrix multiplication over a finite field, diffusing every byte's influence." },
             { label: "AddRoundKey", detail: "The current round's subkey (derived from the main key) is XORed into the state." },
           ],
+        },
+      },
+      {
+        heading: "The same four steps, as a pipeline",
+        body: [
+          "Laid out as a loop, it's clearer why AES needs as many rounds as it does: each pass diffuses the state a little further, and it takes several rounds before a single changed input bit has plausibly affected every output bit.",
+        ],
+        diagram: {
+          type: "pipeline",
+          steps: ["SubBytes", "ShiftRows", "MixColumns", "AddRoundKey"],
+          loopLabel: "× 10 / 12 / 14 rounds",
         },
       },
       {
@@ -254,6 +276,13 @@ export const modules: Module[] = [
             ],
           },
         },
+      },
+      {
+        heading: "Inside GHASH: how the tag is actually built",
+        body: [
+          "The encryption half of GCM is plain CTR mode: a counter block is encrypted and XORed with the plaintext. The authentication half runs in parallel — every ciphertext block is folded into a running value through multiplication in the finite field GF(2¹²⁸), keyed by a hash subkey H derived from encrypting an all-zero block. That running value is then XORed with one more encrypted counter block (using counter value J0, never reused for plaintext) to produce the final tag.",
+        ],
+        diagram: { type: "gcm" },
       },
       {
         heading: "Padding, and the oracle it can create",
@@ -533,7 +562,9 @@ export const modules: Module[] = [
         heading: "OAEP and PSS: the modern replacements",
         body: [
           "OAEP (Optimal Asymmetric Encryption Padding) is the modern standard for RSA encryption, built to be provably secure against chosen-ciphertext attacks using randomized padding derived from hash functions. For signatures, the analogous modern scheme is RSA-PSS (Probabilistic Signature Scheme), which similarly replaces the deterministic padding of PKCS#1 v1.5 signatures with a randomized construction.",
+          "OAEP builds its randomization from a fresh random seed, mixed into the message through two rounds of masking with a hash-based mask generation function (MGF1) — each round's output feeds into the next, so recovering any part of the original message requires recovering the entire encoded block intact.",
         ],
+        diagram: { type: "oaep" },
       },
       {
         heading: "The practical takeaway",
@@ -686,14 +717,15 @@ export const modules: Module[] = [
           },
         ],
         diagram: {
-          type: "sequence",
+          type: "swimlane",
           title: "Diffie-Hellman key exchange",
-          steps: [
-            { label: "Agree on public parameters", detail: "Alice and Bob agree on a prime p and generator g — these can be public and reused." },
-            { label: "Alice → Bob: A = gᵃ mod p", detail: "Alice picks a secret a, computes A, and sends it over the (possibly watched) channel." },
-            { label: "Bob → Alice: B = gᵇ mod p", detail: "Bob picks a secret b, computes B, and sends it back." },
-            { label: "Both derive the shared secret", detail: "Alice computes Bᵃ mod p; Bob computes Aᵇ mod p. Both equal gᵃᵇ mod p." },
+          leftActor: "Alice",
+          rightActor: "Bob",
+          messages: [
+            { from: "left", label: "A = gᵃ mod p" },
+            { from: "right", label: "B = gᵇ mod p" },
           ],
+          caption: "Both then compute the same value independently: Alice raises B to her secret a; Bob raises A to his secret b. Neither ever transmits a or b.",
         },
       },
       {
@@ -1181,6 +1213,22 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "The exchange, client and server",
+        body: [
+          "The same setup, viewed as messages crossing the wire rather than internal steps: both sides contribute to the key exchange, then the server proves its identity before anything else is trusted.",
+        ],
+        diagram: {
+          type: "swimlane",
+          leftActor: "Client",
+          rightActor: "Server",
+          messages: [
+            { from: "left", label: "version + key exchange init" },
+            { from: "right", label: "host key + signature" },
+            { from: "left", label: "encrypted session data" },
+          ],
+        },
+      },
+      {
         heading: "Trust-on-first-use vs. certificate authorities",
         body: [
           "Unlike TLS, which relies on a global PKI of Certificate Authorities, SSH's default host key model is trust-on-first-use: the first time you connect to a server, its host key fingerprint is recorded, and every future connection is checked against that record — which is exactly what the \"the authenticity of host X can't be established\" warning is asking you to verify manually. Larger organizations often layer an SSH certificate authority on top, having a trusted CA sign both host keys and user keys, closer to the TLS model.",
@@ -1219,6 +1267,23 @@ export const modules: Module[] = [
             { label: "Certificate verified", detail: "Client walks the certificate chain to a trusted root CA before trusting the connection." },
             { label: "Application data encrypted", detail: "All further traffic is encrypted with AES-GCM or ChaCha20-Poly1305 using the derived session keys." },
           ],
+        },
+      },
+      {
+        heading: "The handshake, as a message exchange",
+        body: [
+          "Stripped down to who sends what, a TLS 1.3 handshake is remarkably short — one message each way before application data starts flowing, which is exactly what makes it fast enough to happen on every new connection without a noticeable delay.",
+        ],
+        diagram: {
+          type: "swimlane",
+          leftActor: "Client",
+          rightActor: "Server",
+          messages: [
+            { from: "left", label: "Hello + key share" },
+            { from: "right", label: "Hello + key share + cert" },
+            { from: "right", label: "Encrypted app data" },
+          ],
+          caption: "Everything after the server's first reply — including the rest of that same flight of messages — is already encrypted, which is why TLS 1.3 leaks less handshake metadata than TLS 1.2 did.",
         },
       },
       {

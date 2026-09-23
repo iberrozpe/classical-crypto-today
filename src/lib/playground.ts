@@ -53,6 +53,13 @@ export const playgroundTools: PlaygroundTool[] = [
         },
       },
       {
+        heading: "The same thing, as a block diagram",
+        body: [
+          "The encryption path (top) and the authentication path (bottom) run side by side — the ciphertext produced on top feeds directly into the GHASH chain on the bottom, and the tag is what comes out the other end.",
+        ],
+        diagram: { type: "gcm" },
+      },
+      {
         heading: "Why the tamper button breaks decryption",
         body: [
           "\"Tamper with 1 byte\" flips 8 bits of ciphertext before decryption. Multiplication in GF(2¹²⁸) has the same avalanche property as a hash function — one changed input bit changes GHASH's output completely and unpredictably. Your browser recomputes the tag from the (now tampered) ciphertext, compares it to the 16 bytes that travelled alongside it, finds no match, and crypto.subtle.decrypt() throws rather than returning any plaintext at all, even a single correct byte.",
@@ -180,6 +187,13 @@ export const playgroundTools: PlaygroundTool[] = [
         },
       },
       {
+        heading: "The same masking, as a block diagram",
+        body: [
+          "Each half masks the other: the seed masks DB into maskedDB, and maskedDB then masks the seed into maskedSeed. The three pieces — a leading 0x00 byte, maskedSeed, and maskedDB — concatenate directly into EM.",
+        ],
+        diagram: { type: "oaep" },
+      },
+      {
         heading: "Then, and only then, the RSA step",
         body: [
           "Everything above happens before any modular exponentiation. The assembled encoded message EM is what gets raised to the public exponent: C = EMᵉ mod n, using the same textbook RSA formula covered in the RSA module. The base64 string labeled \"Ciphertext\" in this tool is exactly that C, encoded.",
@@ -254,6 +268,16 @@ export const playgroundTools: PlaygroundTool[] = [
           "\"Derive shared secret\" runs one elliptic-curve scalar multiplication per side, using the same double-and-add computation covered in the ECC module: Alice multiplies Bob's public point by her own private scalar; Bob multiplies Alice's public point by his.",
         ],
         math: [{ expr: "\\text{Alice: } a \\cdot (bG) \\qquad \\text{Bob: } b \\cdot (aG)" }],
+        diagram: {
+          type: "swimlane",
+          leftActor: "Alice",
+          rightActor: "Bob",
+          messages: [
+            { from: "left", label: "public key A = aG" },
+            { from: "right", label: "public key B = bG" },
+          ],
+          caption: "That's the entire exchange — only the public keys shown above ever cross the wire. Everything after this point happens independently on each side.",
+        },
       },
       {
         heading: "Landing on the same point, from different directions",
