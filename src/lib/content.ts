@@ -20,7 +20,9 @@ export type DiagramSpec =
       left: { title: string; points: string[] };
       right: { title: string; points: string[] };
     }
-  | { type: "merkle" };
+  | { type: "merkle" }
+  | { type: "grid"; title?: string; rows: string[][]; caption?: string }
+  | { type: "ec-point-addition" };
 
 export interface Section {
   heading: string;
@@ -99,7 +101,7 @@ export const modules: Module[] = [
     title: "Symmetric-key cryptography & AES",
     summary:
       "The same key locks and unlocks the data. Fast, simple in concept, and everywhere — from disk encryption to the bulk of every TLS session.",
-    minutes: 13,
+    minutes: 26,
     category: "Symmetric-key",
     tags: ["developer", "architect", "itops", "researcher", "curious"],
     sections: [
@@ -135,30 +137,137 @@ export const modules: Module[] = [
         },
       },
       {
-        heading: "Modes of operation",
+        heading: "Inside a round: the state, laid out as a grid",
         body: [
-          "AES itself only encrypts a single 128-bit block. To encrypt real messages, it's combined with a mode of operation. ECB mode (encrypt each block independently) is insecure for most data because identical plaintext blocks produce identical ciphertext blocks, leaking patterns.",
-          "Modern systems use authenticated modes like AES-GCM, which combine encryption with a built-in integrity check (a tag) that detects tampering. GCM is the mode behind most TLS 1.3 connections today.",
+          "AES doesn't treat its 128-bit block as a flat line of bytes — it arranges the 16 bytes into a 4×4 grid called the state, filled one column at a time from the input. Every transformation in a round (SubBytes, ShiftRows, MixColumns, AddRoundKey) operates on this grid shape, which is exactly why ShiftRows and MixColumns are able to spread a single input byte's influence across the entire block within a couple of rounds.",
+        ],
+        diagram: {
+          type: "grid",
+          title: "The AES state — 16 input bytes b0…b15, filled column by column",
+          rows: [
+            ["b0", "b4", "b8", "b12"],
+            ["b1", "b5", "b9", "b13"],
+            ["b2", "b6", "b10", "b14"],
+            ["b3", "b7", "b11", "b15"],
+          ],
+          caption: "This grid, not the original byte order, is what SubBytes, ShiftRows, and MixColumns actually operate on.",
+        },
+      },
+      {
+        heading: "ShiftRows: spreading bytes across columns",
+        body: [
+          "SubBytes (the step before this one) substitutes each byte independently using a fixed lookup table — it adds non-linearity, but on its own it wouldn't mix bytes together at all. ShiftRows is what starts the mixing: it cyclically shifts row r of the state left by r positions. Row 0 doesn't move; row 3 shifts by three positions. After this, a byte that started in one column is now sitting in a different column, ready for MixColumns to blend it with its new neighbors.",
+        ],
+        diagram: {
+          type: "grid",
+          title: "The state after ShiftRows",
+          rows: [
+            ["b0", "b4", "b8", "b12"],
+            ["b5", "b9", "b13", "b1"],
+            ["b10", "b14", "b2", "b6"],
+            ["b15", "b3", "b7", "b11"],
+          ],
+          caption: "Row 1 shifted left by 1, row 2 by 2, row 3 by 3 — compare against the original layout above.",
+        },
+      },
+      {
+        heading: "MixColumns and the key schedule",
+        body: [
+          "MixColumns treats each column of four bytes as a small vector and multiplies it by a fixed matrix, using arithmetic in a finite field (GF(2⁸)) rather than ordinary integer arithmetic. The output byte in each position depends on all four input bytes of that column — this is the step that actually diffuses information within a column, complementing ShiftRows' diffusion across columns.",
+          "None of this would be a secret without a key. AES's key schedule (key expansion) takes the original 128/192/256-bit key and algorithmically derives a separate round key for every round — 11, 13, or 15 round keys depending on key size — using repeated rotation, substitution (reusing the same S-box as SubBytes), and XOR with round constants. Each round's AddRoundKey step XORs one of these derived round keys into the state; without knowing the original key, an attacker can't reproduce any of them.",
+        ],
+        math: [
+          {
+            expr: "\\text{Number of round keys} = \\text{rounds} + 1 \\quad (11,\\ 13,\\ \\text{or } 15 \\text{ for AES-128/192/256})",
+          },
+        ],
+      },
+      {
+        heading: "Modes of operation: turning a block cipher into something usable",
+        body: [
+          "AES itself only ever encrypts one 128-bit block at a time. A mode of operation is the algorithm that extends that single-block primitive to encrypt messages of any length — and the choice of mode matters as much as the choice of key size, because a weak mode can leak information even when the underlying cipher (AES) is unbroken.",
+        ],
+      },
+      {
+        heading: "ECB: the mode you should never use",
+        body: [
+          "Electronic Codebook (ECB) mode is the simplest possible approach: split the message into blocks and encrypt each one independently with the same key. It's also the classic cautionary example in cryptography teaching, because identical plaintext blocks always produce identical ciphertext blocks — patterns in the input (a repeated header, a solid-colored region of an image) remain visible as patterns in the output, even though each individual block is properly encrypted.",
+        ],
+        math: [
+          {
+            expr: "C_i = \\mathrm{AES}(K, P_i) \\quad \\text{for each block } i, \\text{ independently}",
+          },
+        ],
+      },
+      {
+        heading: "CBC: chaining blocks together",
+        body: [
+          "Cipher Block Chaining (CBC) fixes ECB's pattern leakage by XORing each plaintext block with the previous ciphertext block before encrypting it, starting with a random Initialization Vector (IV) for the first block. This makes every ciphertext block depend on everything encrypted before it, so identical plaintext blocks no longer produce identical ciphertext — but it also means CBC is inherently sequential to decrypt, and a corrupted block only affects that block and the next one, not everything after it.",
+        ],
+        math: [
+          {
+            expr: "C_i = \\mathrm{AES}(K,\\ P_i \\oplus C_{i-1}), \\qquad C_0 = \\mathrm{IV}",
+          },
+        ],
+        diagram: {
+          type: "sequence",
+          title: "CBC encryption, block by block",
+          steps: [
+            { label: "Block 1", detail: "P₁ is XORed with the IV, then encrypted to produce C₁." },
+            { label: "Block 2", detail: "P₂ is XORed with C₁ (the previous ciphertext), then encrypted to produce C₂." },
+            { label: "Block 3 and onward", detail: "Each block is XORed with the ciphertext immediately before it — one long dependency chain." },
+          ],
+        },
+      },
+      {
+        heading: "CTR: turning a block cipher into a stream cipher",
+        body: [
+          "Counter (CTR) mode takes a completely different approach: instead of encrypting the plaintext directly, it encrypts a counter value (combined with a nonce) to produce a keystream, then XORs that keystream with the plaintext — structurally identical to the stream-cipher pattern covered in the ChaCha20 module. This has a major practical advantage over CBC: because each block's keystream only depends on the counter, not on previous ciphertext, blocks can be encrypted and decrypted in parallel and in any order.",
+        ],
+        math: [
+          {
+            expr: "C_i = P_i \\oplus \\mathrm{AES}(K,\\ \\mathrm{nonce} \\,\\|\\, i)",
+          },
+        ],
+      },
+      {
+        heading: "GCM: encryption and authentication in one pass",
+        body: [
+          "Galois/Counter Mode (GCM) is CTR mode plus an authentication layer: alongside encrypting with a counter-based keystream exactly like CTR, it computes an authentication tag over the ciphertext using a technique called GHASH. The result is an AEAD construction — the same category as ChaCha20-Poly1305 — that gives you confidentiality and tamper detection from a single pass over the data, which is why GCM (not CBC, not plain CTR) is the default for AES in TLS 1.3.",
         ],
         diagram: {
           type: "compare",
           left: {
-            title: "ECB — insecure for most data",
+            title: "CTR — confidentiality only",
             points: [
-              "Each block encrypted independently: Cᵢ = AES(K, Pᵢ)",
-              "Identical plaintext blocks → identical ciphertext blocks",
-              "Patterns in the plaintext (like a solid-color image) visibly leak through",
+              "Fast, parallelizable, no padding needed",
+              "No built-in way to detect tampering",
+              "A flipped ciphertext bit silently flips the corresponding plaintext bit",
             ],
           },
           right: {
-            title: "GCM — authenticated, the modern default",
+            title: "GCM — confidentiality + integrity",
             points: [
-              "Each block combined with a counter before encryption, so identical plaintext blocks never repeat",
-              "Produces an authentication tag alongside the ciphertext",
-              "Tampering with any bit invalidates the tag on decryption",
+              "CTR-mode encryption plus a GHASH-computed authentication tag",
+              "Any tampering with the ciphertext is detected on decryption",
+              "The mode behind most TLS 1.3 connections today",
             ],
           },
         },
+      },
+      {
+        heading: "Padding, and the oracle it can create",
+        body: [
+          "CBC and ECB both require the plaintext to be a multiple of the block size, so short final blocks are padded — commonly with PKCS#7 padding, which fills the remaining bytes with a value equal to the number of padding bytes added (so a decryptor can identify and strip it unambiguously). CTR and GCM, by contrast, need no padding at all, since they turn AES into a stream cipher rather than encrypting the plaintext directly.",
+          "Padding sounds like a minor bookkeeping detail, but it's exactly the mechanism behind the Bleichenbacher-style padding oracle attacks covered in the RSA padding module and the Lucky Thirteen attack covered in the side-channel module — both exploit a server that reveals, even indirectly through timing, whether decrypted padding was valid.",
+        ],
+      },
+      {
+        heading: "Nonce reuse: the catastrophic failure mode",
+        body: [
+          "Every mode covered here depends on never reusing the same IV/nonce with the same key for two different messages. In CBC, IV reuse leaks whether two messages start with the same block. In CTR and GCM, it's far worse: reusing a nonce produces the identical keystream twice, and XORing the two resulting ciphertexts together cancels the keystream out entirely — handing an attacker the XOR of the two plaintexts directly, which is often enough to recover both messages. For GCM specifically, nonce reuse also breaks the authentication guarantee, letting an attacker forge valid-looking ciphertexts.",
+          "This is why AES-GCM implementations are so strict about nonce generation (typically a counter or a securely random 96-bit value that's never reused for a given key) — it's the single most common way real-world AES-GCM deployments get broken, not any weakness in AES itself.",
+        ],
       },
       {
         heading: "Why it matters for the PQC conversation",
@@ -224,7 +333,7 @@ export const modules: Module[] = [
     title: "RSA & public-key cryptography",
     summary:
       "Two mathematically linked keys — one public, one private — solve the problem symmetric crypto can't: how do you share a secret with someone you've never met?",
-    minutes: 17,
+    minutes: 30,
     category: "Public-key",
     tags: ["developer", "architect", "executive", "researcher", "curious"],
     sections: [
@@ -296,11 +405,79 @@ export const modules: Module[] = [
         ],
       },
       {
+        heading: "Finding d: the extended Euclidean algorithm",
+        body: [
+          "Solving \"17d ≡ 1 (mod 3120)\" isn't guesswork — it's a standard computation called the extended Euclidean algorithm, which finds the modular inverse of e directly. Run backward, the ordinary Euclidean algorithm (repeated division to find a greatest common divisor) leaves behind a trail of remainders; the extended version tracks coefficients alongside those remainders and, because e and φ(n) were chosen to be coprime, that trail terminates in exactly the d you need. It's fast — logarithmic in the size of the numbers — which is what makes key generation practical even for 2048-bit primes.",
+        ],
+      },
+      {
+        heading: "Why e = 65537 shows up everywhere",
+        body: [
+          "Almost every RSA key you'll encounter uses the public exponent e = 65537, and the reason is a genuine engineering trade-off rather than convention. Written in binary, 65537 is 10000000000000001 — only two bits are set — and the square-and-multiply algorithm used for modular exponentiation does one multiplication per bit and one extra squaring per set bit, so a sparse exponent like this makes encryption and signature verification (both of which use e) noticeably faster than a dense one would.",
+          "Smaller exponents like e = 3 are even faster, but they reopen exactly the kind of low-exponent attacks covered below — 65537 is small enough to stay fast and large enough to close off the simplest ones. It also happens to be a Fermat prime (2¹⁶ + 1), which guarantees it's coprime with φ(n) for essentially any RSA modulus, simplifying key generation.",
+        ],
+        math: [
+          { expr: "e = 65537 = 2^{16} + 1" },
+        ],
+      },
+      {
+        heading: "RSA signatures: the same math, opposite roles",
+        body: [
+          "Encryption and signing use identical RSA arithmetic with the public and private key's roles reversed. To encrypt, anyone raises a message to the public exponent; to sign, the key-holder raises a (hashed) message to their private exponent — something only they can do. To decrypt, the key-holder raises the ciphertext to their private exponent; to verify a signature, anyone raises it to the public exponent and checks the result matches the message's hash.",
+          "In practice, following the hash-then-sign pattern from the hashing module, RSA never signs a raw message directly — it signs a padded hash digest (via RSA-PSS, covered in the padding module), for exactly the same reasons raw RSA encryption is unsafe.",
+        ],
+        math: [
+          {
+            expr: "\\text{Sign: } S = H(m)^{d} \\bmod n \\qquad \\text{Verify: } H(m) \\stackrel{?}{=} S^{e} \\bmod n",
+          },
+        ],
+      },
+      {
+        heading: "What can go wrong: classic implementation attacks",
+        body: [
+          "RSA's math is sound; most real-world breaks come from how it's deployed. Three patterns recur across decades of RSA vulnerabilities, and none of them require factoring anything.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "RSA pitfalls that have nothing to do with factoring",
+          blocks: [
+            {
+              label: "Common modulus attack",
+              detail: "If two users are (incorrectly) issued the same n with different e values, anyone who intercepts the same message encrypted to both can recover it algebraically — without ever factoring n.",
+            },
+            {
+              label: "Håstad's broadcast attack",
+              detail: "The same message sent to several recipients using a small e (like 3) and different moduli can be recovered using the Chinese Remainder Theorem, entirely bypassing the private keys.",
+            },
+            {
+              label: "Weak randomness in key generation",
+              detail: "If the \"random\" primes p and q aren't actually independent and unpredictable, keys across different devices can end up sharing a prime factor — a real issue found in some embedded devices' RSA key generation.",
+            },
+          ],
+        },
+      },
+      {
         heading: "Why factoring is the whole game",
         body: [
-          "Every attack on RSA either tries to factor n directly or tries to find a shortcut that avoids factoring. The best known classical factoring algorithm, the General Number Field Sieve, has sub-exponential running time — hard enough that factoring a 2048-bit RSA modulus is considered infeasible with any classical computer for the foreseeable future.",
+          "Every attack on RSA either tries to factor n directly or tries to find a shortcut that avoids factoring. The best known classical factoring algorithm, the General Number Field Sieve (GNFS), has sub-exponential running time — hard enough that factoring a 2048-bit RSA modulus is considered infeasible with any classical computer for the foreseeable future.",
           "This is precisely the assumption that Shor's algorithm breaks on a sufficiently large quantum computer — see the quantum threat module for why RSA is on every PQC migration roadmap.",
         ],
+        math: [
+          {
+            expr: "O\\!\\left(\\exp\\left((1.92 + o(1))(\\ln n)^{1/3}(\\ln \\ln n)^{2/3}\\right)\\right)",
+            caption: "GNFS's running time — sub-exponential, but still growing fast enough that doubling n's bit length costs far more than double the effort.",
+          },
+        ],
+        diagram: {
+          type: "structure",
+          title: "The factoring record, over time",
+          blocks: [
+            { label: "RSA-100 (330 bits)", detail: "Factored in 1991." },
+            { label: "RSA-129 (426 bits)", detail: "The modulus from the original 1977 RSA challenge — factored in 1994, using idle computer time volunteered over the internet." },
+            { label: "RSA-768 (768 bits)", detail: "Factored in 2009, after roughly two years of computation across many machines." },
+            { label: "RSA-2048 (2048 bits)", detail: "Today's minimum recommended size — still unfactored, and expected to stay that way classically for the foreseeable future." },
+          ],
+        },
       },
     ],
   },
@@ -371,7 +548,7 @@ export const modules: Module[] = [
     title: "Elliptic Curve Cryptography (ECC / ECDSA)",
     summary:
       "The same public-key guarantees as RSA, with dramatically smaller keys — because the underlying hard problem is different math entirely.",
-    minutes: 14,
+    minutes: 28,
     category: "Public-key",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -393,16 +570,70 @@ export const modules: Module[] = [
         ],
       },
       {
+        heading: "Point addition: the operation everything is built from",
+        body: [
+          "\"Adding\" two points on an elliptic curve has a genuinely geometric definition, which is part of why ECC feels less intuitive than RSA's arithmetic at first. To add two distinct points P and Q, draw a straight line through them — since the curve is cubic, that line crosses it at exactly one more point. Reflecting that third point across the x-axis gives P + Q. This isn't a metaphor for the algebra; it's literally how the group operation is defined, and it has a closed-form algebraic formula that a computer evaluates directly, with no actual line-drawing involved.",
+          "Doubling a point (adding P to itself, needed whenever a bit of the private key is 1 during scalar multiplication) works the same way in the limit: instead of a line through two distinct points, you use the tangent line at P.",
+        ],
+        diagram: { type: "ec-point-addition" },
+      },
+      {
+        heading: "Scalar multiplication: how kG is actually computed",
+        body: [
+          "Computing Q = kG for a 256-bit private key k doesn't mean adding G to itself k times — that would be astronomically slow. Instead, implementations use double-and-add, the same square-and-multiply idea behind fast RSA exponentiation: scan the bits of k, doubling a running point at every step and adding G whenever that bit is 1. A 256-bit scalar multiplication takes on the order of 256 doublings and up to 256 additions — fast enough to run thousands of times per second, while still being, as far as anyone knows, computationally impossible to reverse.",
+        ],
+      },
+      {
+        heading: "A worked example over a small curve",
+        body: [
+          "Real curves use primes hundreds of bits long, but the arithmetic works identically at toy scale. Take the curve y² = x³ + 2x + 2 (mod 17) — a small finite field with only 17 possible values for each coordinate — with base point G = (5, 1).",
+          "Computing 2G (doubling G) using the curve's point-doubling formula gives (6, 3). Computing 3G = 2G + G gives (10, 6). An attacker who only sees G and 3G = (10, 6) has to recover the scalar 3 — trivial here with a 17-element field, but the identical computation over a 256-bit field is the ECDLP that underpins every ECC key in production.",
+        ],
+        math: [
+          {
+            expr: "y^{2} = x^{3} + 2x + 2 \\pmod{17}, \\quad G = (5,1)",
+          },
+          {
+            expr: "2G = (6,3) \\qquad 3G = (10,6)",
+          },
+        ],
+      },
+      {
         heading: "Smaller keys, real consequences",
         body: [
           "Smaller keys mean less data to transmit and store, faster key generation, and faster signing operations — which is why ECC dominates mobile, IoT, and high-volume TLS deployments. Curve25519 (for key exchange, as X25519) and Curve448 are widely used modern curves chosen partly to avoid pitfalls found in some earlier NIST-standardized curves.",
         ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "NIST P-256 (secp256r1)",
+            points: [
+              "Standardized by NIST in 1999, still the most widely deployed curve in TLS certificates",
+              "Parameters generated from an unexplained random seed — a long-running source of community distrust",
+              "Implementation is more prone to subtle timing side-channels if not written carefully",
+            ],
+          },
+          right: {
+            title: "Curve25519 (X25519)",
+            points: [
+              "Designed by Daniel J. Bernstein in 2005 specifically to make safe implementation easier",
+              "Every parameter choice is publicly justified — no unexplained constants",
+              "Default key exchange curve in TLS 1.3, SSH, Signal, and WireGuard",
+            ],
+          },
+        },
       },
       {
         heading: "ECDSA: signatures on curves",
         body: [
           "The Elliptic Curve Digital Signature Algorithm (ECDSA) uses ECC to produce digital signatures — proof that a message came from the holder of a private key, without revealing that key. It's the signature scheme behind most modern TLS certificates and behind Bitcoin and Ethereum transaction signing.",
           "ECDSA requires a fresh, truly random per-signature value (the nonce) for every signature. Reusing a nonce, or generating it with a weak random number generator, leaks the private key directly — this has caused real-world key compromises, including a widely cited 2010 Sony PlayStation 3 signing-key leak caused by a static nonce.",
+        ],
+        math: [
+          {
+            expr: "r = (k \\cdot G)_x \\bmod n \\qquad s = k^{-1}(H(m) + r \\cdot d) \\bmod n",
+            caption: "The signature is the pair (r, s); k is the per-signature nonce, d is the private key, n is the curve's group order.",
+          },
         ],
         diagram: {
           type: "sequence",
@@ -414,6 +645,12 @@ export const modules: Module[] = [
             { label: "Accept or reject", detail: "A match proves the signer holds the private key for Q — without Q ever having been used to sign anything itself." },
           ],
         },
+      },
+      {
+        heading: "How a leaked nonce leaks the entire private key",
+        body: [
+          "The ECDSA signing formula involves the nonce k algebraically alongside the private key d. If an attacker ever learns k for even one signature — through a weak RNG, a side-channel leak, or (as in the PS3 case) the same k reused across two different signatures — they can rearrange the signing equation to solve directly for d. This is a one-shot, deterministic break, not a probabilistic weakening: a single exposed nonce is equivalent to publishing the private key outright.",
+        ],
       },
       {
         heading: "Why it matters for the PQC conversation",
@@ -428,7 +665,7 @@ export const modules: Module[] = [
     title: "Diffie-Hellman key exchange",
     summary:
       "Two parties agree on a shared secret over a public channel, without ever transmitting the secret itself — the idea that started public-key cryptography.",
-    minutes: 12,
+    minutes: 24,
     category: "Protocols",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -460,9 +697,50 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "A worked example with small numbers",
+        body: [
+          "Take the small prime p = 23 and generator g = 5. Alice picks secret a = 6 and computes A = 5⁶ mod 23 = 8. Bob picks secret b = 15 and computes B = 5¹⁵ mod 23 = 19. They exchange A and B in the open.",
+          "Alice now computes B^a mod p = 19⁶ mod 23 = 2. Bob computes A^b mod p = 8¹⁵ mod 23 = 2. Same answer, reached independently — and an eavesdropper who saw p, g, A, and B has to solve a discrete logarithm to recover a or b, which is infeasible once these numbers are hundreds of digits long instead of two.",
+        ],
+        math: [
+          { expr: "p=23,\\ g=5,\\ a=6,\\ b=15" },
+          { expr: "A = 5^{6} \\bmod 23 = 8 \\qquad B = 5^{15} \\bmod 23 = 19" },
+          { expr: "19^{6} \\bmod 23 = 8^{15} \\bmod 23 = 2 \\quad\\text{(the shared secret)}" },
+        ],
+      },
+      {
+        heading: "Why DH alone isn't enough: the man-in-the-middle problem",
+        body: [
+          "Plain Diffie-Hellman guarantees secrecy from a passive eavesdropper, but nothing about who's actually on the other end. An active attacker sitting between Alice and Bob can run two separate DH exchanges — one with each of them — and relay traffic through itself, decrypting and re-encrypting everything, while both Alice and Bob believe they're talking directly to each other.",
+          "This is exactly why real protocols never use bare DH: TLS combines the DH (or ECDH) exchange with a certificate-backed signature over the handshake transcript, and the Signal Protocol's X3DH verifies identity keys out of band — the key exchange handles secrecy, but authentication has to come from somewhere else entirely.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "Man-in-the-middle against unauthenticated DH",
+          steps: [
+            { label: "Alice → \"Bob\"", detail: "Alice starts a DH exchange, but Mallory intercepts it and impersonates Bob." },
+            { label: "Mallory → real Bob", detail: "Mallory starts a second, separate DH exchange with Bob, impersonating Alice." },
+            { label: "Two independent shared secrets", detail: "Alice shares a secret with Mallory; Bob shares a different secret with Mallory. Neither shares one with the other." },
+            { label: "Mallory relays and reads everything", detail: "Every message is decrypted, read (and optionally altered), and re-encrypted as it passes through — invisibly to both sides." },
+          ],
+        },
+      },
+      {
         heading: "Elliptic-curve Diffie-Hellman (ECDH)",
         body: [
-          "The same idea maps onto elliptic curves: instead of modular exponentiation, parties combine points on a curve. X25519 (ECDH over Curve25519) is the default key exchange in TLS 1.3 and in most modern SSH and messaging protocols, valued for speed and resistance to several classes of implementation error.",
+          "The same idea maps onto elliptic curves: instead of modular exponentiation, parties combine points on a curve, using exactly the scalar multiplication (kG) and point addition covered in the ECC module. X25519 (ECDH over Curve25519) is the default key exchange in TLS 1.3 and in most modern SSH and messaging protocols, valued for speed and resistance to several classes of implementation error.",
+        ],
+        math: [
+          {
+            expr: "A = a \\cdot G \\qquad B = b \\cdot G \\qquad \\text{shared secret} = a \\cdot B = b \\cdot A = ab \\cdot G",
+            caption: "Structurally identical to classical DH — modular exponentiation is simply replaced with elliptic-curve scalar multiplication.",
+          },
+        ],
+      },
+      {
+        heading: "Safe primes and small-subgroup attacks",
+        body: [
+          "The choice of p and g isn't arbitrary. If p is chosen carelessly, the group of values reachable by exponentiation can have small subgroups, and an attacker can sometimes force a DH exchange into one of those subgroups, drastically shrinking the search space for the discrete logarithm. Real implementations use \"safe primes\" (p where (p−1)/2 is also prime) specifically to avoid this, and validate that received public values aren't degenerate (like 0 or 1) before using them.",
         ],
       },
       {
@@ -470,6 +748,25 @@ export const modules: Module[] = [
         body: [
           "When DH parameters are generated fresh for each session (ephemeral Diffie-Hellman, denoted DHE or ECDHE), a compromise of a server's long-term private key doesn't let an attacker decrypt previously recorded sessions — each session's key existed only in memory and is gone once the connection ends. This property, forward secrecy, is now mandatory in TLS 1.3.",
         ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "Static key exchange (no forward secrecy)",
+            points: [
+              "The same long-term key pair is reused across many sessions",
+              "If that private key is ever compromised, every past recorded session can be decrypted retroactively",
+              "This is exactly the classical half of the harvest-now-decrypt-later risk",
+            ],
+          },
+          right: {
+            title: "Ephemeral DH/ECDH (DHE/ECDHE)",
+            points: [
+              "A fresh key pair is generated for every single session",
+              "The session key exists only in memory and is discarded afterward",
+              "Compromising a server's long-term identity key doesn't expose any past session's content",
+            ],
+          },
+        },
       },
     ],
   },
@@ -478,7 +775,7 @@ export const modules: Module[] = [
     title: "Hash functions & digital signatures",
     summary:
       "One-way fingerprints for data, and the mechanism that proves a message is authentic and untampered — without encrypting anything.",
-    minutes: 13,
+    minutes: 26,
     category: "Foundations",
     tags: ["developer", "architect", "grc", "researcher"],
     sections: [
@@ -493,6 +790,76 @@ export const modules: Module[] = [
           {
             expr: "H: \\{0,1\\}^{*} \\rightarrow \\{0,1\\}^{256}",
             caption: "SHA-256 maps an input of any length to a fixed 256-bit digest.",
+          },
+        ],
+      },
+      {
+        heading: "The avalanche effect, concretely",
+        body: [
+          "\"Deterministic but unpredictable\" is easiest to see with real output. SHA-256 of the five-letter string \"hello\" and SHA-256 of \"hellp\" — one letter different, one step along the alphabet — share no visible structure at all, even though the inputs are nearly identical. This is the avalanche effect in practice: a well-designed hash function is built so that changing even a single input bit flips roughly half the output bits, with no way to predict which half in advance.",
+        ],
+        math: [
+          { expr: "\\mathrm{SHA256}(\\texttt{\"hello\"}) = \\mathtt{2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824}" },
+          { expr: "\\mathrm{SHA256}(\\texttt{\"hellp\"}) = \\mathtt{fdd7585e08c4e2afd71dcabdb4636c89d557a3f42db9e2040c8bbd1708aa4ce7}" },
+        ],
+      },
+      {
+        heading: "How SHA-2 actually processes a message: Merkle-Damgård",
+        body: [
+          "SHA-256 can't hash an arbitrary-length message in one mathematical step — internally, it uses the Merkle-Damgård construction: the message is padded and split into fixed-size blocks, and a compression function processes them one at a time, feeding its output (a \"chaining value\") in as part of the input for the next block. The final chaining value, after the last block, is the digest.",
+          "This iterative structure is elegant and easy to reason about, but it has a well-known side effect: given only H(message) and the length of message (not the message itself), an attacker can compute H(message ‖ extra) for an attacker-chosen extra, without ever knowing the original message — a length-extension attack. It works precisely because the digest is just the last chaining value, which is all the compression function needs to keep going.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "Merkle-Damgård: hashing a multi-block message",
+          steps: [
+            { label: "Pad the message", detail: "The message is padded to a multiple of the block size, with its length encoded at the end." },
+            { label: "Process block 1", detail: "The compression function combines block 1 with a fixed initial value, producing chaining value H₁." },
+            { label: "Process block 2", detail: "The compression function combines block 2 with H₁, producing H₂ — and so on for every remaining block." },
+            { label: "Final chaining value = digest", detail: "After the last block, the current chaining value is output directly as the hash." },
+          ],
+        },
+      },
+      {
+        heading: "Why HMAC isn't just H(key ‖ message)",
+        body: [
+          "Length extension is exactly why HMAC (covered below) doesn't simply hash the key and message concatenated together — naive H(key ‖ message) is vulnerable to exactly the attack above: an attacker who knows H(key ‖ message) and its length can compute a valid H(key ‖ message ‖ extra) without ever learning the key. HMAC's nested double-hashing construction was specifically designed to close this gap, and it's why \"just concatenate and hash\" is one of the most common amateur cryptography mistakes.",
+        ],
+      },
+      {
+        heading: "SHA-3: a structurally different design",
+        body: [
+          "SHA-3, standardized in 2015 after a public competition (much like AES's selection process), doesn't use Merkle-Damgård at all — it's built on a sponge construction, which absorbs input into a large internal state and then squeezes output back out. Because the internal state is larger than the final digest, and the output isn't simply \"the last chaining value\" the way Merkle-Damgård's is, SHA-3 is naturally immune to length-extension attacks without needing an HMAC-style workaround.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "Merkle-Damgård (SHA-2)",
+            points: [
+              "Processes input in fixed-size blocks through a chained compression function",
+              "The digest is literally the final chaining value",
+              "Vulnerable to length-extension unless wrapped (as HMAC does)",
+            ],
+          },
+          right: {
+            title: "Sponge construction (SHA-3)",
+            points: [
+              "Absorbs input into a large internal state, then squeezes out the digest",
+              "Internal state is larger than and structurally separate from the output",
+              "Naturally resistant to length-extension attacks",
+            ],
+          },
+        },
+      },
+      {
+        heading: "The birthday bound: why 256 bits gives \"only\" 128-bit collision resistance",
+        body: [
+          "Preimage resistance (finding an input for a given digest) costs roughly 2ⁿ operations for an n-bit hash — but finding any collision (any two inputs sharing a digest) is cheaper than that, thanks to the birthday paradox: among a surprisingly small set of random values, the odds of two colliding are much higher than intuition suggests. For an n-bit hash, an attacker can expect to find a collision after roughly 2ⁿᐟ² attempts, not 2ⁿ — which is exactly why SHA-256 (256-bit output) is described as offering 128-bit collision resistance, not 256-bit.",
+        ],
+        math: [
+          {
+            expr: "\\text{preimage cost} \\approx 2^{n} \\qquad \\text{collision cost} \\approx 2^{n/2}",
+            caption: "This is also why MD5 (128-bit) and SHA-1 (160-bit) fell to practical collision attacks well before anyone found a preimage attack against either.",
           },
         ],
       },
@@ -584,7 +951,7 @@ export const modules: Module[] = [
     title: "X.509 certificates & the PKI trust hierarchy",
     summary:
       "A certificate is just a signed statement binding a public key to an identity. Here's what's actually inside one, and how revocation works.",
-    minutes: 13,
+    minutes: 24,
     category: "Protocols",
     tags: ["architect", "itops", "grc", "developer"],
     sections: [
@@ -622,9 +989,62 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "Subject Alternative Names and wildcard certificates",
+        body: [
+          "A single certificate can cover far more than one hostname. Subject Alternative Names (SANs) let one certificate list many exact domains (example.com, www.example.com, api.example.com), while a wildcard certificate (CN=*.example.com) covers any single-level subdomain at once. Modern browsers ignore the legacy Subject/CN field for hostname matching entirely and check only the SAN list — a certificate without the right SAN entry fails validation even if the CN field looks correct.",
+        ],
+      },
+      {
         heading: "Revocation: harder than it sounds",
         body: [
-          "A certificate's validity period isn't the only way it can stop being trusted — it can be revoked early, for example if its private key is compromised. Certificate Revocation Lists (CRLs) are downloadable lists of revoked certificate serial numbers; OCSP (Online Certificate Status Protocol) lets a client ask a CA in real time whether a specific certificate is still valid. Both have practical weaknesses (CRLs grow large and go stale; live OCSP queries leak browsing metadata to the CA and can fail open if the CA is unreachable), which is why OCSP stapling — where the server itself periodically fetches and attaches a signed OCSP response — has become the preferred approach.",
+          "A certificate's validity period isn't the only way it can stop being trusted — it can be revoked early, for example if its private key is compromised. Certificate Revocation Lists (CRLs) are downloadable lists of revoked certificate serial numbers; OCSP (Online Certificate Status Protocol) lets a client ask a CA in real time whether a specific certificate is still valid.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "CRL",
+            points: [
+              "Client downloads a full list of revoked serial numbers from the CA",
+              "Lists grow large over time and go stale between updates",
+              "No per-check metadata leak — the whole list is downloaded once",
+            ],
+          },
+          right: {
+            title: "OCSP",
+            points: [
+              "Client asks the CA in real time: is this exact certificate still valid?",
+              "Small, fast response — but a live query per connection is slow at scale",
+              "Leaks which sites a client is visiting to the CA, and can fail open if the CA is unreachable",
+            ],
+          },
+        },
+      },
+      {
+        heading: "OCSP stapling: fixing both problems at once",
+        body: [
+          "OCSP stapling moves the OCSP query off the client entirely: the web server itself periodically fetches a signed, timestamped OCSP response from the CA and \"staples\" it to the TLS handshake, so the client gets revocation proof without ever contacting the CA directly. This eliminates the metadata leak, removes a round trip from every client connection, and is now the default approach for high-traffic HTTPS deployments.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "OCSP stapling",
+          steps: [
+            { label: "Server fetches proof periodically", detail: "Independently of any client connection, the server asks the CA's OCSP responder for a signed \"still valid\" statement, refreshed on a schedule (often hourly)." },
+            { label: "Server caches the response", detail: "The signed OCSP response is stored and reused for every incoming connection until it needs refreshing." },
+            { label: "Client connects", detail: "During the TLS handshake, the server attaches (\"staples\") the cached OCSP response alongside its certificate." },
+            { label: "Client verifies locally", detail: "The client checks the OCSP response's signature and timestamp — no separate network call to the CA needed." },
+          ],
+        },
+      },
+      {
+        heading: "Certificate Transparency: policing the CAs themselves",
+        body: [
+          "PKI's trust model has a structural weak point: any trusted CA can issue a valid certificate for any domain, and browsers have no way to know a certificate is fraudulent just by looking at it — this is exactly what happened in the 2011 DigiNotar breach, where attackers issued a valid, browser-trusted certificate for google.com without Google's involvement. Certificate Transparency (CT) addresses this by requiring newly issued certificates to be logged in public, append-only, cryptographically verifiable logs, so domain owners (and researchers) can monitor for certificates fraudulently issued in their name. Modern browsers now refuse to trust certificates that aren't backed by CT log entries.",
+        ],
+      },
+      {
+        heading: "Mutual TLS: certificates in both directions",
+        body: [
+          "Everything so far describes the server proving its identity to the client. Mutual TLS (mTLS) adds the reverse: the client also presents a certificate, and the server verifies it the same way the client verifies the server's — walking a chain of trust back to a CA the server trusts. This is common for service-to-service authentication inside a backend (rather than for regular websites, where issuing and managing a certificate for every visitor isn't practical), and it's the backbone of many zero-trust network architectures.",
         ],
       },
       {
@@ -640,7 +1060,7 @@ export const modules: Module[] = [
     title: "JSON Web Tokens & API authentication",
     summary:
       "JWTs put a signed claim in every request header. They're everywhere in modern APIs — and a few well-known implementation mistakes keep recurring.",
-    minutes: 10,
+    minutes: 20,
     category: "Protocols",
     tags: ["developer", "architect"],
     sections: [
@@ -665,16 +1085,72 @@ export const modules: Module[] = [
         ],
       },
       {
+        heading: "A real token, decoded",
+        body: [
+          "Here's an actual HS256-signed JWT encoding the claims {\"sub\": \"1234567890\", \"name\": \"Alice\", \"iat\": 1516239022}, signed with a symmetric secret. Each of the three segments below decodes with ordinary base64url — paste the first two into any base64 decoder and you'll get readable JSON back; only the third segment (the signature) is opaque, because it's the output of an HMAC, not an encoding of anything.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "A real HS256 token, segment by segment",
+          blocks: [
+            { label: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", detail: "Decodes to {\"alg\":\"HS256\",\"typ\":\"JWT\"}" },
+            { label: "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFsaWNlIiwiaWF0IjoxNTE2MjM5MDIyfQ", detail: "Decodes to {\"sub\":\"1234567890\",\"name\":\"Alice\",\"iat\":1516239022}" },
+            { label: "gJh7jdj0jULbD61KFeWRh9Ux05MSQMND99uj_GbqN_k", detail: "HMAC-SHA256 over the first two segments, using the server's secret key" },
+          ],
+        },
+      },
+      {
         heading: "What the signature does and doesn't guarantee",
         body: [
           "Verifying a JWT's signature confirms the claims haven't been altered since signing and that they were signed by a holder of the corresponding key — it says nothing about whether the token has since been revoked or is still meant to be valid, which is why expiry (exp) claims and short lifetimes matter. The payload is only encoded, not encrypted: anyone can base64-decode it and read the claims, so secrets never belong there.",
         ],
       },
       {
+        heading: "JWTs vs. opaque session tokens",
+        body: [
+          "The alternative to a JWT is an opaque session token: a random string that means nothing on its own, looked up in a server-side database on every request. The trade-off between them is really a trade-off about where state lives.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "Opaque session token",
+            points: [
+              "Server looks up session state in a database on every request",
+              "Revoking access is instant — just delete the server-side record",
+              "Doesn't scale as easily across independent services without a shared session store",
+            ],
+          },
+          right: {
+            title: "JWT",
+            points: [
+              "Self-contained — any service holding the public key (or shared secret) can verify it with no database lookup",
+              "Scales well across microservices with no shared state",
+              "Can't be revoked before its expiry without extra infrastructure (a blocklist, short lifetimes, etc.)",
+            ],
+          },
+        },
+      },
+      {
         heading: "Well-known implementation pitfalls",
         body: [
-          "The \"alg: none\" vulnerability let an attacker submit a token whose header claims no signature algorithm was used, and some early libraries would accept it as valid. A related algorithm-confusion attack tricks a server configured to verify RS256 (asymmetric) tokens into instead verifying an attacker-crafted HS256 token using the server's own public key as the HMAC secret — since the public key is, by definition, public. Modern libraries mitigate both by requiring the verifier to pin the expected algorithm rather than trusting the token's own header.",
+          "The \"alg: none\" vulnerability let an attacker submit a token whose header claims no signature algorithm was used, and some early libraries would accept it as valid — effectively an unsigned token treated as trusted.",
         ],
+      },
+      {
+        heading: "Algorithm confusion: turning a public key into an HMAC secret",
+        body: [
+          "A more subtle attack targets servers that support both RS256 (asymmetric) and HS256 (symmetric) verification. If the verifier trusts the algorithm named in the token's own header rather than pinning the algorithm it expects, an attacker can take a server's public RSA key (which is, by design, public) and use it as the secret for an HS256-signed forged token. A verifier that blindly follows the header's \"alg\": \"HS256\" will compute the HMAC using that public key as the secret — and the attacker, who also has that public key, can compute the exact same HMAC.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "Algorithm confusion attack",
+          steps: [
+            { label: "Attacker obtains the server's public key", detail: "RSA/ECDSA public keys used for RS256/ES256 verification are, by design, not secret." },
+            { label: "Attacker crafts a forged token", detail: "They write whatever claims they want, set the header to \"alg\": \"HS256\", and sign it with HMAC using the public key as the HMAC secret." },
+            { label: "Vulnerable server verifies", detail: "If the server reads \"alg\" from the token and uses HS256 verification with the same public key value, the forged signature checks out." },
+            { label: "The fix", detail: "A correctly implemented verifier pins the expected algorithm itself and rejects any token that doesn't match — never trusting the header's own claim." },
+          ],
+        },
       },
     ],
   },
@@ -1170,7 +1646,7 @@ export const personas: Persona[] = [
     tagline: "System & infrastructure focus",
     pitch:
       "Every PKI, VPN and TLS terminator you've designed rests on the same handful of primitives. Get the mental model right before you redesign anything.",
-    firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 12 },
+    firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 24 },
     moduleSlugs: [
       "diffie-hellman-key-exchange",
       "elliptic-curve-cryptography",
