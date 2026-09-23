@@ -4,9 +4,20 @@ import { useState } from "react";
 import { Field, TextArea, Button, OutputBox, StatusBanner, Panel } from "./ui";
 import { bufToBase64, base64ToBuf, utf8ToBuf, bufToUtf8 } from "@/lib/webcrypto-utils";
 
+async function importRsaOaepPrivateKey(pkcs8B64: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "pkcs8",
+    base64ToBuf(pkcs8B64.trim()),
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    false,
+    ["decrypt"],
+  );
+}
+
 export default function RsaOaepTool() {
-  const [keyPair, setKeyPair] = useState<CryptoKeyPair | null>(null);
+  const [publicKey, setPublicKey] = useState<CryptoKey | null>(null);
   const [publicKeyB64, setPublicKeyB64] = useState("");
+  const [privateKeyB64, setPrivateKeyB64] = useState("");
   const [generating, setGenerating] = useState(false);
   const [plaintext, setPlaintext] = useState("The key exchange problem, solved with math.");
   const [ciphertextB64, setCiphertextB64] = useState("");
@@ -29,22 +40,39 @@ export default function RsaOaepTool() {
       ["encrypt", "decrypt"],
     );
     const spki = await crypto.subtle.exportKey("spki", kp.publicKey);
-    setKeyPair(kp);
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", kp.privateKey);
+    setPublicKey(kp.publicKey);
     setPublicKeyB64(bufToBase64(spki));
+    setPrivateKeyB64(bufToBase64(pkcs8));
     setCiphertextB64("");
     setDecrypted("");
     setGenerating(false);
-    setStatus({ tone: "success", text: "Key pair generated. The public key (SPKI, base64) is below — the private key never leaves this component." });
+    setStatus({ tone: "success", text: "Key pair generated. Both keys are exported below — edit the private key field before decrypting to see what happens with the wrong key." });
+  }
+
+  async function useWrongKey() {
+    setGenerating(true);
+    const wrongPair = await crypto.subtle.generateKey(
+      {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["encrypt", "decrypt"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", wrongPair.privateKey);
+    setPrivateKeyB64(bufToBase64(pkcs8));
+    setDecrypted("");
+    setGenerating(false);
+    setStatus({ tone: "info", text: "Swapped in an unrelated private key from a freshly generated, different key pair. Try decrypting now." });
   }
 
   async function encrypt() {
-    if (!keyPair) return;
+    if (!publicKey) return;
     try {
-      const ct = await crypto.subtle.encrypt(
-        { name: "RSA-OAEP" },
-        keyPair.publicKey,
-        utf8ToBuf(plaintext),
-      );
+      const ct = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, utf8ToBuf(plaintext));
       setCiphertextB64(bufToBase64(ct));
       setDecrypted("");
       setStatus({ tone: "success", text: "Encrypted with the public key using RSA-OAEP." });
@@ -54,14 +82,16 @@ export default function RsaOaepTool() {
   }
 
   async function decrypt() {
-    if (!keyPair || !ciphertextB64) return;
-    const pt = await crypto.subtle.decrypt(
-      { name: "RSA-OAEP" },
-      keyPair.privateKey,
-      base64ToBuf(ciphertextB64),
-    );
-    setDecrypted(bufToUtf8(pt));
-    setStatus({ tone: "success", text: "Decrypted with the private key." });
+    if (!ciphertextB64 || !privateKeyB64) return;
+    try {
+      const key = await importRsaOaepPrivateKey(privateKeyB64);
+      const pt = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, key, base64ToBuf(ciphertextB64));
+      setDecrypted(bufToUtf8(pt));
+      setStatus({ tone: "success", text: "Decrypted successfully — this private key is the mathematical match for the public key that encrypted it." });
+    } catch {
+      setDecrypted("");
+      setStatus({ tone: "error", text: "Decryption failed — this private key doesn't correspond to the public key that encrypted the message, so the RSA math doesn't recover the plaintext." });
+    }
   }
 
   return (
@@ -85,14 +115,22 @@ export default function RsaOaepTool() {
           <TextArea rows={2} value={plaintext} onChange={(e) => setPlaintext(e.target.value)} />
         </Field>
         <div className="mt-3">
-          <Button onClick={encrypt} disabled={!keyPair}>Encrypt</Button>
+          <Button onClick={encrypt} disabled={!publicKey}>Encrypt</Button>
         </div>
         {ciphertextB64 && <div className="mt-4"><OutputBox label="Ciphertext (base64)" value={ciphertextB64} /></div>}
       </Panel>
 
       <Panel>
-        <p className="mb-3 text-sm font-medium text-foreground">3. Decrypt with the private key</p>
-        <Button onClick={decrypt} disabled={!ciphertextB64}>Decrypt</Button>
+        <p className="mb-3 text-sm font-medium text-foreground">3. Decrypt with a private key</p>
+        <Field label="Private key (PKCS8, base64)" hint="Edit this, or use the button below, to try decrypting with the wrong key">
+          <TextArea rows={4} value={privateKeyB64} onChange={(e) => setPrivateKeyB64(e.target.value)} />
+        </Field>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <Button onClick={decrypt} disabled={!ciphertextB64 || !privateKeyB64}>Decrypt</Button>
+          <Button variant="secondary" onClick={useWrongKey} disabled={!ciphertextB64 || generating}>
+            Swap in a different (wrong) private key
+          </Button>
+        </div>
         {decrypted && <div className="mt-4"><OutputBox label="Decrypted plaintext" value={decrypted} tone="success" /></div>}
         {status && <div className="mt-4"><StatusBanner tone={status.tone}>{status.text}</StatusBanner></div>}
       </Panel>
