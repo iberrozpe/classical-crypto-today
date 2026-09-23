@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getModule, modules, roleLabels } from "@/lib/content";
+import Math from "@/components/Math";
+import DiagramRenderer from "@/components/diagrams/DiagramRenderer";
 
 export async function generateStaticParams() {
   return modules.map((m) => ({ slug: m.slug }));
@@ -62,6 +64,8 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
                 </p>
               ))}
             </div>
+            {s.diagram && <DiagramRenderer diagram={s.diagram} />}
+            {s.math?.map((m, i) => <Math key={i} expr={m.expr} caption={m.caption} />)}
           </section>
         ))}
       </article>
