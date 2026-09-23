@@ -1,4 +1,12 @@
 export default function CurvePointAdditionDiagram() {
+  // P, Q, and −R are constructed to be exactly collinear (−R = P + 1.9·(Q−P)),
+  // and R is the exact reflection of −R across the curve's horizontal symmetry
+  // axis at y=150 — the line drawn below passes through all three by construction.
+  const P = { x: 75, y: 195 };
+  const Q = { x: 229, y: 134 };
+  const negR = { x: 368, y: 79 };
+  const R = { x: 368, y: 221 };
+
   return (
     <div className="not-prose my-6 overflow-x-auto rounded-lg border border-border bg-surface p-5">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
@@ -10,39 +18,68 @@ export default function CurvePointAdditionDiagram() {
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
-          d="M 40 60 C 120 20, 160 280, 230 150 C 280 60, 340 40, 440 90"
+          d="M 30 105 C 100 50, 160 170, 229 134 C 270 110, 330 60, 368 79 C 400 95, 425 100, 450 105"
           fill="none"
           stroke="var(--border)"
           strokeWidth="2"
         />
         <path
-          d="M 40 240 C 120 280, 160 20, 230 150 C 280 240, 340 260, 440 210"
+          d="M 30 195 C 100 250, 160 130, 229 166 C 270 190, 330 240, 368 221 C 400 205, 425 200, 450 195"
           fill="none"
           stroke="var(--border)"
           strokeWidth="2"
         />
 
-        <line x1="70" y1="216" x2="330" y2="66" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="4 4" />
-        <line x1="330" y1="66" x2="330" y2="234" stroke="var(--muted)" strokeWidth="1.5" strokeDasharray="4 4" />
+        <line
+          x1={P.x}
+          y1={P.y}
+          x2={negR.x}
+          y2={negR.y}
+          stroke="var(--accent)"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
+        <line
+          x1={negR.x}
+          y1={negR.y}
+          x2={R.x}
+          y2={R.y}
+          stroke="var(--muted)"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
 
-        <circle cx="70" cy="216" r="5" fill="var(--accent)" />
-        <text x="55" y="200" fill="currentColor" fontSize="15" fontFamily="monospace">P</text>
+        <circle cx={P.x} cy={P.y} r="5" fill="var(--accent)" />
+        <text x={P.x - 18} y={P.y + 20} fill="currentColor" fontSize="15" fontFamily="monospace">
+          P
+        </text>
 
-        <circle cx="245" cy="141" r="5" fill="var(--accent)" />
-        <text x="255" y="130" fill="currentColor" fontSize="15" fontFamily="monospace">Q</text>
+        <circle cx={Q.x} cy={Q.y} r="5" fill="var(--accent)" />
+        <text x={Q.x + 10} y={Q.y - 10} fill="currentColor" fontSize="15" fontFamily="monospace">
+          Q
+        </text>
 
-        <circle cx="330" cy="66" r="5" fill="var(--muted)" />
-        <text x="340" y="60" fill="currentColor" fontSize="13" fontFamily="monospace" opacity="0.7">
+        <circle cx={negR.x} cy={negR.y} r="5" fill="var(--muted)" />
+        <text
+          x={negR.x + 10}
+          y={negR.y - 8}
+          fill="currentColor"
+          fontSize="13"
+          fontFamily="monospace"
+          opacity="0.7"
+        >
           −R
         </text>
 
-        <circle cx="330" cy="234" r="5" fill="var(--accent)" />
-        <text x="340" y="250" fill="currentColor" fontSize="15" fontFamily="monospace">R = P+Q</text>
+        <circle cx={R.x} cy={R.y} r="5" fill="var(--accent)" />
+        <text x={R.x + 10} y={R.y + 18} fill="currentColor" fontSize="15" fontFamily="monospace">
+          R = P+Q
+        </text>
       </svg>
       <p className="mt-3 text-xs text-muted">
         Draw a line through P and Q; it crosses the curve at one more point. Reflect that point
-        across the x-axis to get R = P + Q. Every step here is simple algebra — the difficulty
-        is entirely in reversing it.
+        across the curve&apos;s horizontal axis of symmetry to get R = P + Q. Every step here is
+        simple algebra — the difficulty is entirely in reversing it.
       </p>
     </div>
   );
