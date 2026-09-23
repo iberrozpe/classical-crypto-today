@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/explore"
           className="rounded-lg border border-border p-6 transition hover:border-accent"
@@ -76,15 +76,6 @@ export default function Home() {
           </p>
         </Link>
         <Link
-          href="/assess"
-          className="rounded-lg border border-border p-6 transition hover:border-accent"
-        >
-          <h3 className="font-semibold">Assess</h3>
-          <p className="mt-2 text-sm text-muted">
-            Eight quick questions about what you run today, mapped to a prioritized reading list.
-          </p>
-        </Link>
-        <Link
           href="/learn"
           className="rounded-lg border border-border p-6 transition hover:border-accent"
         >
@@ -92,6 +83,25 @@ export default function Home() {
           <p className="mt-2 text-sm text-muted">
             The full module catalog — symmetric crypto, public-key crypto, and how TLS
             combines them.
+          </p>
+        </Link>
+        <Link
+          href="/playground"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Playground</h3>
+          <p className="mt-2 text-sm text-muted">
+            Real cryptography running in your browser — encrypt, sign, and verify with the Web
+            Crypto API.
+          </p>
+        </Link>
+        <Link
+          href="/assess"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Assess</h3>
+          <p className="mt-2 text-sm text-muted">
+            Eight quick questions about what you run today, mapped to a prioritized reading list.
           </p>
         </Link>
       </div>
