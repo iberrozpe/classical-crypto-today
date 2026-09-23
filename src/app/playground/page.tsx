@@ -21,17 +21,24 @@ export default function PlaygroundIndexPage() {
 
       <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {playgroundTools.map((tool) => (
-          <Link
+          <div
             key={tool.slug}
-            href={`/playground/${tool.slug}`}
             className="flex flex-col rounded-lg border border-border bg-surface p-5 transition hover:border-accent hover:bg-surface-hover"
           >
-            <span className="text-xs font-medium uppercase tracking-wide text-accent">
-              {tool.category}
-            </span>
-            <span className="mt-2 text-lg font-semibold">{tool.title}</span>
-            <p className="mt-2 flex-1 text-sm text-muted">{tool.summary}</p>
-          </Link>
+            <Link href={`/playground/${tool.slug}`} className="flex flex-1 flex-col">
+              <span className="text-xs font-medium uppercase tracking-wide text-accent">
+                {tool.category}
+              </span>
+              <span className="mt-2 text-lg font-semibold">{tool.title}</span>
+              <p className="mt-2 flex-1 text-sm text-muted">{tool.summary}</p>
+            </Link>
+            <Link
+              href={`/playground/${tool.slug}/how-it-works`}
+              className="mt-3 text-sm font-medium text-accent underline underline-offset-4"
+            >
+              What&apos;s happening under the hood →
+            </Link>
+          </div>
         ))}
       </div>
     </div>

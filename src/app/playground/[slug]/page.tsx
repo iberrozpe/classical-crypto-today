@@ -36,14 +36,25 @@ export default async function PlaygroundToolPage(props: PageProps<"/playground/[
       <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{tool.title}</h1>
       <p className="mt-4 text-lg text-muted">{tool.summary}</p>
 
-      {related && (
+      <div className="mt-4 flex flex-wrap gap-3">
         <Link
-          href={`/learn/${related.slug}`}
-          className="mt-4 inline-block text-sm font-medium text-accent underline underline-offset-4"
+          href={`/playground/${slug}/how-it-works`}
+          className="text-sm font-medium text-accent underline underline-offset-4"
         >
-          Read the {related.title} module for the full explanation →
+          What&apos;s happening under the hood →
         </Link>
-      )}
+        {related && (
+          <>
+            <span className="text-sm text-muted">·</span>
+            <Link
+              href={`/learn/${related.slug}`}
+              className="text-sm font-medium text-accent underline underline-offset-4"
+            >
+              Read the {related.title} module for the full explanation →
+            </Link>
+          </>
+        )}
+      </div>
 
       <div className="mt-10">
         <ToolRenderer slug={slug} />
