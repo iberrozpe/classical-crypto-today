@@ -28,8 +28,8 @@ export default function CurvePointAdditionDiagram() {
         <path d={LOWER_PATH} fill="none" stroke="var(--border)" strokeWidth="2" />
 
         <line
-          x1={P.x}
-          y1={P.y}
+          x1={Q.x}
+          y1={Q.y}
           x2={S.x}
           y2={S.y}
           stroke="var(--accent)"
