@@ -38,11 +38,20 @@ export type DiagramSpec =
   | { type: "modular-clock"; modulus?: number; start?: number; add?: number }
   | { type: "timeline"; title?: string; events: { date: string; label: string; detail?: string }[] };
 
+export interface PracticeProblem {
+  prompt: string;
+  hint?: string;
+  placeholder?: string;
+  answer: string;
+  explanation: string;
+}
+
 export interface Section {
   heading: string;
   body: string[];
   math?: MathBlock[];
   diagram?: DiagramSpec;
+  practice?: PracticeProblem[];
 }
 
 export interface Module {
@@ -156,7 +165,7 @@ export const modules: Module[] = [
     title: "The math underneath: modular arithmetic & one-way functions",
     summary:
       "Every public-key algorithm in this catalog leans on the same idea: a calculation that's easy in one direction and effectively impossible to undo in the other.",
-    minutes: 22,
+    minutes: 42,
     category: "Foundations",
     tags: ["developer", "researcher", "curious"],
     sections: [
@@ -188,6 +197,146 @@ export const modules: Module[] = [
         math: [
           {
             expr: "a \\cdot a^{-1} \\equiv 1 \\pmod{n} \\quad \\text{exists} \\iff \\gcd(a, n) = 1",
+          },
+        ],
+      },
+      {
+        heading: "Euclid's algorithm, traced step by step",
+        body: [
+          "The greatest common divisor (GCD) of two integers is the largest number that divides both evenly. Euclid's algorithm finds it without ever factoring either number: repeatedly replace the larger number with its remainder when divided by the smaller, until the remainder hits zero — the last non-zero remainder is the GCD.",
+          "Worked example: gcd(1071, 462). Divide 1071 by 462: that's 2 remainder 147. Divide 462 by 147: that's 3 remainder 21. Divide 147 by 21: that's 7 remainder 0 — the remainder just hit zero, so the GCD is the previous remainder, 21.",
+        ],
+        math: [
+          {
+            expr: "1071 = 2 \\times 462 + 147 \\quad 462 = 3 \\times 147 + 21 \\quad 147 = 7 \\times 21 + 0",
+            caption: "Three divisions, each time replacing (larger, smaller) with (smaller, remainder). gcd(1071, 462) = 21.",
+          },
+        ],
+        practice: [
+          {
+            prompt: "Using Euclid's algorithm, compute gcd(48372, 21894).",
+            hint: "Divide the larger by the smaller, keep the remainder, and repeat with (previous smaller, remainder) until the remainder is 0.",
+            placeholder: "gcd",
+            answer: "6",
+            explanation: "48372 = 2×21894 + 4584; 21894 = 4×4584 + 2558; 4584 = 1×2558 + 2026; 2558 = 1×2026 + 532; 2026 = 3×532 + 430; 532 = 1×430 + 102; 430 = 4×102 + 22; 102 = 4×22 + 14; 22 = 1×14 + 8; 14 = 1×8 + 6; 8 = 1×6 + 2; 6 = 3×2 + 0 — the GCD is 6.",
+          },
+        ],
+      },
+      {
+        heading: "The extended Euclidean algorithm, traced step by step",
+        body: [
+          "Euclid's algorithm finds the GCD; the extended version finds something more useful for cryptography — integers x and y such that ax + by = gcd(a, b). Run backward through the division trace, substituting each remainder back in terms of the previous two.",
+          "Worked example: find x, y such that 240x + 46y = gcd(240, 46). The forward divisions are 240 = 5×46 + 10, then 46 = 4×10 + 6, then 10 = 1×6 + 4, then 6 = 1×4 + 2, then 4 = 2×2 + 0 — so gcd(240, 46) = 2. Substituting backward: 2 = 6 − 1×4, then 4 = 10 − 1×6 gives 2 = 2×6 − 1×10, then 6 = 46 − 4×10 gives 2 = 2×46 − 9×10, then 10 = 240 − 5×46 gives 2 = 47×46 − 9×240. So x = −9, y = 47 — and indeed 240×(−9) + 46×47 = −2160 + 2162 = 2.",
+          "This is precisely how a modular inverse gets computed: if gcd(a, n) = 1, the same back-substitution gives x such that ax + ny = 1 — meaning ax ≡ 1 (mod n), so x is a's inverse mod n. It's exactly the computation the RSA module uses to derive the private exponent d from e and φ(n).",
+        ],
+        practice: [
+          {
+            prompt: "Using the extended Euclidean algorithm, find the modular inverse of 23 mod 100 — the value d such that 23d ≡ 1 (mod 100).",
+            hint: "Run Euclid's algorithm forward on (100, 23) to confirm gcd = 1, then back-substitute to write 1 = 23x + 100y. x mod 100 is the inverse.",
+            placeholder: "inverse of 23 mod 100",
+            answer: "87",
+            explanation: "The back-substitution gives 23×87 − 100×20 = 2001 − 2000 = 1, so 23×87 ≡ 1 (mod 100). Check directly: 23 × 87 = 2001, and 2001 mod 100 = 1.",
+          },
+        ],
+      },
+      {
+        heading: "Fast exponentiation: square-and-multiply, traced step by step",
+        body: [
+          "Computing aᵉ mod n by multiplying a by itself e−1 times is far too slow once e has hundreds of digits, as in real RSA. Square-and-multiply computes it in roughly log₂(e) steps instead, by reading e's binary expansion and, at each bit, squaring a running result — multiplying in the base only when that bit is 1.",
+          "Worked example: compute 5¹³ mod 19. In binary, 13 is 1101. Starting from a running result of 1 and scanning the bits left to right: bit 1 → square (1² = 1), multiply (1×5 = 5). bit 1 → square (5² = 25 ≡ 6), multiply (6×5 = 30 ≡ 11). bit 0 → square only (11² = 121 ≡ 7). bit 1 → square (7² = 49 ≡ 11), multiply (11×5 = 55 ≡ 17). Final result: 17 — so 5¹³ mod 19 = 17, reached in 4 squarings and 3 multiplications instead of 12 multiplications.",
+        ],
+        math: [
+          {
+            expr: "13 = 1101_2 \\;\\Rightarrow\\; 5^{13} = ((((5^2)^2 \\cdot 5)^2)^2 \\cdot 5) \\bmod 19 = 17",
+          },
+        ],
+        practice: [
+          {
+            prompt: "Using square-and-multiply, compute 12⁴⁵ mod 97.",
+            hint: "45 in binary is 101101. Scan left to right, squaring the running result every bit and multiplying by 12 only where the bit is 1.",
+            placeholder: "12^45 mod 97",
+            answer: "70",
+            explanation: "45 = 101101₂. Tracing square-and-multiply through all six bits (squaring throughout, multiplying by 12 on bits 1, 1, 1, 1) lands on 70 — the same answer a direct 12⁴⁵ mod 97 computation gives, reached in 5 squarings and 4 multiplications instead of 44.",
+          },
+        ],
+      },
+      {
+        heading: "Fermat's Little Theorem and Euler's Theorem",
+        body: [
+          "Fermat's Little Theorem states that for a prime p and any integer a not divisible by p, aᵖ⁻¹ ≡ 1 (mod p). Worked example: p = 13, a = 2. Then 2¹² mod 13 = 1, exactly as the theorem predicts.",
+          "Euler's Theorem generalizes this to any modulus n, not just primes: aᶲ⁽ⁿ⁾ ≡ 1 (mod n) whenever gcd(a, n) = 1, where φ(n) (Euler's totient) counts the integers from 1 to n that are coprime to n. For n = 35 = 5×7, φ(35) = (5−1)(7−1) = 24 — and indeed 2²⁴ mod 35 = 1. This is exactly the identity RSA is built on: choosing e and d so that ed ≡ 1 (mod φ(n)) guarantees Mᵉᵈ ≡ M (mod n) for any message M, by Euler's theorem.",
+        ],
+        math: [
+          {
+            expr: "a^{p-1} \\equiv 1 \\pmod{p} \\quad\\text{(Fermat)} \\qquad a^{\\varphi(n)} \\equiv 1 \\pmod{n},\\ \\gcd(a,n)=1 \\quad\\text{(Euler)}",
+          },
+        ],
+        practice: [
+          {
+            prompt: "n = 50 = 2×5². φ(50) = 20. Using Euler's theorem, what is 3²⁰ mod 50? (gcd(3, 50) = 1.)",
+            hint: "The exponent exactly equals φ(n), and Euler's theorem says a^φ(n) ≡ 1 (mod n) whenever gcd(a, n) = 1 — no computation needed.",
+            placeholder: "3^20 mod 50",
+            answer: "1",
+            explanation: "Since gcd(3, 50) = 1 and the exponent is exactly φ(50) = 20, Euler's theorem guarantees 3²⁰ ≡ 1 (mod 50) directly, without computing the power at all.",
+          },
+        ],
+      },
+      {
+        heading: "Quadratic residues and the Legendre symbol",
+        body: [
+          "a is a quadratic residue mod p if x² ≡ a (mod p) has a solution — informally, if a has a \"square root\" in modular arithmetic. The Legendre symbol (a/p) captures this in one value: +1 if a is a quadratic residue, −1 if it isn't, and 0 if a ≡ 0 (mod p).",
+          "Euler's criterion gives a direct way to compute it without searching for a square root: (a/p) ≡ a^((p−1)/2) (mod p). Worked example: is 10 a quadratic residue mod 13? Compute 10⁶ mod 13 = 1, so (10/13) = 1 — yes, 10 is a quadratic residue mod 13 (its square roots are 6 and 7, since 6² = 36 ≡ 10 and 7² = 49 ≡ 10).",
+        ],
+        math: [
+          {
+            expr: "\\left(\\frac{a}{p}\\right) \\equiv a^{(p-1)/2} \\pmod{p} \\in \\{-1, 0, 1\\}",
+            caption: "Euler's criterion — the Legendre symbol, computed with the same square-and-multiply from two sections ago.",
+          },
+        ],
+        practice: [
+          {
+            prompt: "Using Euler's criterion, compute the Legendre symbol (6/17). Enter 1 or -1.",
+            hint: "Compute 6^((17-1)/2) mod 17 = 6^8 mod 17.",
+            placeholder: "1 or -1",
+            answer: "-1",
+            explanation: "6⁸ mod 17 = 16 ≡ −1 (mod 17), so (6/17) = −1 — 6 is not a quadratic residue mod 17; no integer squared is congruent to 6 mod 17.",
+          },
+        ],
+      },
+      {
+        heading: "Modular square roots",
+        body: [
+          "Once you know a is a quadratic residue mod p, finding an actual square root is easy for the common case where p ≡ 3 (mod 4): the square root is simply a^((p+1)/4) mod p. (Primes where p ≡ 1 (mod 4) need the more involved Tonelli-Shanks algorithm, not covered here.)",
+          "Worked example: p = 23 (23 mod 4 = 3), a = 18. Compute 18⁶ mod 23 = 8. Check: 8² = 64, and 64 mod 23 = 18 — confirmed, 8 is a square root of 18 mod 23 (the other is 23−8 = 15).",
+        ],
+        math: [
+          {
+            expr: "\\sqrt{a} \\equiv a^{(p+1)/4} \\pmod{p} \\quad \\text{when } p \\equiv 3 \\pmod 4 \\text{ and } a \\text{ is a QR}",
+          },
+        ],
+        practice: [
+          {
+            prompt: "p = 31 (31 mod 4 = 3). 7 is a quadratic residue mod 31. Find the smaller of its two square roots mod 31.",
+            hint: "Compute 7^((31+1)/4) mod 31 = 7^8 mod 31.",
+            placeholder: "smaller square root",
+            answer: "10",
+            explanation: "7⁸ mod 31 = 10, and 10² = 100 ≡ 7 (mod 31) — confirmed. The other root is 31 − 10 = 21.",
+          },
+        ],
+      },
+      {
+        heading: "The Chinese Remainder Theorem, solved by hand",
+        body: [
+          "The Chinese Remainder Theorem (CRT) says a system of congruences with pairwise coprime moduli has exactly one solution modulo the product of those moduli. Worked example: find x such that x ≡ 2 (mod 3) and x ≡ 3 (mod 5). Numbers congruent to 2 mod 3 are 2, 5, 8, 11, ...; checking each mod 5 gives 2, 0, 3 — so x = 8 works, and it's the unique solution mod 15 (= 3×5).",
+          "This scales to more than two congruences by combining them two at a time — solve the first pair mod their product, then combine that result with the third congruence, and so on. It's exactly the technique behind RSA-CRT decryption (splitting one decryption into two faster ones mod p and mod q) and behind Håstad's broadcast attack covered in the RSA module, which recovers a message from the same ciphertext sent to several recipients using CRT.",
+        ],
+        practice: [
+          {
+            prompt: "Find the smallest non-negative x such that x ≡ 3 (mod 7) and x ≡ 4 (mod 9).",
+            hint: "List numbers congruent to 3 mod 7 (3, 10, 17, 24, 31, ...) and check each against mod 9 until one matches.",
+            placeholder: "x",
+            answer: "31",
+            explanation: "31 mod 7 = 3 and 31 mod 9 = 4 — both congruences hold, and 31 is the unique solution mod 63 (= 7×9).",
           },
         ],
       },

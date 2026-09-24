@@ -6,6 +6,7 @@ import { playgroundTools } from "@/lib/playground";
 import { getQuiz } from "@/lib/quiz";
 import Math from "@/components/Math";
 import DiagramRenderer from "@/components/diagrams/DiagramRenderer";
+import PracticeProblems from "@/components/PracticeProblems";
 
 export async function generateStaticParams() {
   return modules.map((m) => ({ slug: m.slug }));
@@ -70,6 +71,7 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
             </div>
             {s.diagram && <DiagramRenderer diagram={s.diagram} />}
             {s.math?.map((m, i) => <Math key={i} expr={m.expr} caption={m.caption} />)}
+            {s.practice && <PracticeProblems problems={s.practice} />}
           </section>
         ))}
       </article>
