@@ -125,6 +125,18 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["random-number-generation"],
   },
   {
+    term: "Curveball (CVE-2020-0601)",
+    definition:
+      "A 2020 Windows CryptoAPI vulnerability that let an attacker forge a trusted ECDSA certificate by substituting a crafted elliptic-curve base point, without ever learning the real private key — the vulnerable verifier checked the public key's value but not that the curve's generator matched the standard one.",
+    relatedModules: ["elliptic-curve-cryptography"],
+  },
+  {
+    term: "DES (Data Encryption Standard)",
+    definition:
+      "The first publicly standardized, thoroughly analyzed symmetric cipher (1977), using a 16-round Feistel network on 64-bit blocks with a 56-bit effective key — retired not for a design flaw, but because that key became exhaustively searchable.",
+    relatedModules: ["des-data-encryption-standard"],
+  },
+  {
     term: "Diffie-Hellman (DH)",
     definition:
       "A key-exchange protocol letting two parties derive a shared secret over a public channel without ever transmitting it, based on the difficulty of the discrete logarithm problem.",
@@ -173,6 +185,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["elliptic-curve-cryptography"],
   },
   {
+    term: "ElGamal cryptosystem",
+    definition:
+      "A public-key encryption scheme built directly on Diffie-Hellman's discrete-log math, letting a sender encrypt to an already-published public key with no live handshake. Ciphertexts are randomized (a fresh one-time secret every message) and always twice the length of the plaintext.",
+    relatedModules: ["elgamal-cryptosystem"],
+  },
+  {
     term: "Entropy",
     definition:
       "A measure of genuine unpredictability. CSPRNGs are seeded from physical entropy sources (hardware interrupt timing, dedicated RNG chips) rather than anything an attacker could predict or replay.",
@@ -185,10 +203,22 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["diffie-hellman-key-exchange", "tls-in-practice"],
   },
   {
+    term: "Feistel network",
+    definition:
+      "A block cipher structure that splits each block in half and repeatedly transforms one half using the other, keyed by a round function — decryption reuses the identical network with round keys applied in reverse, regardless of the round function's complexity. DES is the canonical example; AES uses a different structure instead.",
+    relatedModules: ["des-data-encryption-standard"],
+  },
+  {
     term: "Forward secrecy",
     definition:
       "The property that compromising a long-term private key later doesn't expose past session keys, achieved by using fresh ephemeral keys for each session's key exchange instead of reusing a static one.",
     relatedModules: ["diffie-hellman-key-exchange", "tls-in-practice"],
+  },
+  {
+    term: "Frequency analysis",
+    definition:
+      "The oldest documented cryptanalysis technique (Al-Kindi, c. 850 CE): exploiting the fact that letters occur at predictable frequencies in natural language to break simple substitution ciphers like the Caesar cipher.",
+    relatedModules: ["history-and-purpose-of-cryptography"],
   },
   {
     term: "GCM (Galois/Counter Mode)",
@@ -243,6 +273,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["jwt-and-api-auth"],
   },
   {
+    term: "Kasiski examination",
+    definition:
+      "The technique (Babbage, c. 1854; Kasiski, 1863) that broke the Vigenère cipher: find repeated sequences in the ciphertext, and the distances between them reveal the keyword's length via their greatest common divisor — after which each resulting stream is just an ordinary Caesar shift.",
+    relatedModules: ["history-and-purpose-of-cryptography"],
+  },
+  {
     term: "KDF (Key Derivation Function)",
     definition:
       "An umbrella term for functions that derive one or more cryptographic keys from input material — covering both fast KDFs like HKDF (stretching high-entropy secrets) and slow, deliberately expensive password-hashing KDFs like PBKDF2 and Argon2.",
@@ -255,10 +291,22 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["hash-functions-and-signatures"],
   },
   {
+    term: "Logjam attack",
+    definition:
+      "A 2015 downgrade attack that forced TLS connections onto weak, 512-bit \"export-grade\" Diffie-Hellman parameters left over from 1990s US cryptography export restrictions, making the resulting discrete log breakable via precomputation against a small number of widely reused primes.",
+    relatedModules: ["diffie-hellman-key-exchange"],
+  },
+  {
     term: "MAC (Message Authentication Code)",
     definition:
       "A short value proving both the integrity and authenticity of a message to anyone holding a shared secret key. HMAC is the most common hash-based MAC construction.",
     relatedModules: ["hash-functions-and-signatures"],
+  },
+  {
+    term: "Meet-in-the-middle attack",
+    definition:
+      "A cryptanalysis technique that trades memory for time: precompute and store one direction of a two-step operation, then check the other direction against that table. Famously reduces naive double-DES's expected 2^112 security to roughly 2^57.",
+    relatedModules: ["des-data-encryption-standard"],
   },
   {
     term: "ML-DSA",
@@ -275,6 +323,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "Arithmetic that \"wraps around\" after reaching a fixed modulus, like a clock face — the mathematical foundation underlying RSA, Diffie-Hellman, and the discrete logarithm problem.",
     relatedModules: ["math-foundations-modular-arithmetic"],
+  },
+  {
+    term: "Montgomery's ladder",
+    definition:
+      "A constant-time algorithm for elliptic-curve scalar multiplication that performs one doubling and one addition every step regardless of the scalar's bits, closing the timing side channel that double-and-add leaves open. The algorithm underlying X25519.",
+    relatedModules: ["elliptic-curve-cryptography"],
   },
   {
     term: "MD5 / SHA-1",
@@ -313,6 +367,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["math-foundations-modular-arithmetic"],
   },
   {
+    term: "Passkey",
+    definition:
+      "A public-key credential replacing a password: the private key is generated on and never leaves a user's device, the server stores only the matching public key, and the browser binds every key pair to its exact origin, making it structurally phishing-resistant. Built on the WebAuthn standard.",
+    relatedModules: ["passkeys-webauthn"],
+  },
+  {
     term: "PBKDF2",
     definition:
       "A key derivation function that deliberately slows password hashing by applying HMAC repeatedly, a tunable number of times — simple and standard, but more cheaply parallelizable on GPUs than memory-hard alternatives like Argon2.",
@@ -329,6 +389,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "The original, deterministic RSA padding scheme, vulnerable to the Bleichenbacher padding-oracle attack against encryption. Superseded by OAEP for encryption (PSS is the modern equivalent for signatures).",
     relatedModules: ["rsa-padding-oaep-pkcs1"],
+  },
+  {
+    term: "Pohlig-Hellman algorithm",
+    definition:
+      "An algorithm that breaks the discrete logarithm problem — classical or elliptic-curve — whenever the group's order is smooth (factors into small primes), by solving the discrete log in each small subgroup and recombining the results with the Chinese Remainder Theorem.",
+    relatedModules: ["elliptic-curve-cryptography"],
   },
   {
     term: "Post-compromise security",
@@ -371,9 +437,21 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["key-derivation-functions"],
   },
   {
+    term: "Schnorr signature",
+    definition:
+      "A discrete-log signature scheme built on the same commit-challenge-response structure as ElGamal encryption — simpler and more efficient than DSA, and the basis of Bitcoin's Taproot upgrade.",
+    relatedModules: ["elgamal-cryptosystem", "passkeys-webauthn"],
+  },
+  {
     term: "Session key",
     definition:
       "A symmetric key derived for the duration of a single communication session (e.g. via TLS or SSH's Diffie-Hellman handshake), used for fast bulk encryption instead of slower public-key operations.",
+  },
+  {
+    term: "Shamir's Secret Sharing",
+    definition:
+      "A (k, n)-threshold scheme splitting a secret into n shares so that any k reconstruct it exactly and any k−1 reveal nothing, built on the fact that k points uniquely determine a degree-(k−1) polynomial. Offers information-theoretic, not just computational, security below the threshold.",
+    relatedModules: ["shamir-secret-sharing"],
   },
   {
     term: "Shor's algorithm",
@@ -433,6 +511,18 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "A one-way function that becomes easy to reverse if you possess a specific secret (the \"trapdoor\") — the structural idea behind RSA, where factoring the public modulus is the trapdoor known only to the private key holder.",
     relatedModules: ["math-foundations-modular-arithmetic", "rsa-public-key"],
+  },
+  {
+    term: "Triple DES (3DES)",
+    definition:
+      "DES run three times (encrypt-decrypt-encrypt) with two or three keys, closing the meet-in-the-middle gap that makes naive double-DES barely stronger than single DES — itself since superseded by AES.",
+    relatedModules: ["des-data-encryption-standard"],
+  },
+  {
+    term: "Vigenère cipher",
+    definition:
+      "A polyalphabetic substitution cipher that shifts each letter by a different amount, following a repeating keyword, specifically to defeat frequency analysis — believed unbreakable for roughly three centuries until Kasiski examination cracked it.",
+    relatedModules: ["history-and-purpose-of-cryptography"],
   },
   {
     term: "X.509",

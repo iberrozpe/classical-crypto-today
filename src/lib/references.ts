@@ -34,6 +34,18 @@ export const referenceGroups: ReferenceGroup[] = [
         note: "The original RSA paper.",
       },
       {
+        title: "A Public Key Cryptosystem and a Signature Scheme Based on Discrete Logarithms",
+        publisher: "T. ElGamal, IEEE Transactions on Information Theory, 1985",
+        url: "https://ieeexplore.ieee.org/document/1057074",
+        note: "The original ElGamal encryption and signature paper.",
+      },
+      {
+        title: "How to Share a Secret",
+        publisher: "A. Shamir, Communications of the ACM, 1979",
+        url: "https://dl.acm.org/doi/10.1145/359168.359176",
+        note: "The original threshold secret-sharing paper.",
+      },
+      {
         title: "Algorithms for Quantum Computation: Discrete Logarithms and Factoring",
         publisher: "P. W. Shor, Proceedings of the 35th Annual Symposium on Foundations of Computer Science, 1994",
         url: "https://ieeexplore.ieee.org/document/365700",
@@ -46,6 +58,12 @@ export const referenceGroups: ReferenceGroup[] = [
     references: [
       { title: "FIPS 197 — Advanced Encryption Standard (AES)", publisher: "NIST", url: "https://csrc.nist.gov/pubs/fips/197/final" },
       {
+        title: "FIPS 46-3 — Data Encryption Standard (DES)",
+        publisher: "NIST",
+        url: "https://csrc.nist.gov/pubs/fips/46-3/final",
+        note: "Withdrawn in 2005 once its 56-bit key became exhaustively searchable; superseded by AES.",
+      },
+      {
         title: "SP 800-38D — Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM) and GMAC",
         publisher: "NIST",
         url: "https://csrc.nist.gov/pubs/sp/800/38/d/final",
@@ -54,7 +72,7 @@ export const referenceGroups: ReferenceGroup[] = [
     ],
   },
   {
-    heading: "Public-key cryptography (RSA, Diffie-Hellman, ECC)",
+    heading: "Public-key cryptography (RSA, Diffie-Hellman, ElGamal, ECC)",
     references: [
       { title: "FIPS 186-5 — Digital Signature Standard (DSS)", publisher: "NIST", url: "https://csrc.nist.gov/pubs/fips/186/5/final", note: "Covers RSA and ECDSA signature parameters." },
       { title: "RFC 8017 — PKCS #1: RSA Cryptography Specifications Version 2.2", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8017", note: "OAEP and PKCS#1 v1.5 padding." },
@@ -78,7 +96,7 @@ export const referenceGroups: ReferenceGroup[] = [
     ],
   },
   {
-    heading: "Protocols (TLS, certificates, JWT, SSH, Signal)",
+    heading: "Protocols (TLS, certificates, JWT, SSH, Signal, WebAuthn)",
     references: [
       { title: "RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8446" },
       { title: "RFC 5280 — Internet X.509 Public Key Infrastructure Certificate and CRL Profile", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc5280" },
@@ -89,6 +107,12 @@ export const referenceGroups: ReferenceGroup[] = [
       { title: "RFC 4251 — The Secure Shell (SSH) Protocol Architecture", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc4251" },
       { title: "The X3DH Key Agreement Protocol", publisher: "Signal", url: "https://signal.org/docs/specifications/x3dh/" },
       { title: "The Double Ratchet Algorithm", publisher: "Signal", url: "https://signal.org/docs/specifications/doubleratchet/" },
+      {
+        title: "Web Authentication: An API for accessing Public Key Credentials — Level 3",
+        publisher: "W3C Recommendation",
+        url: "https://www.w3.org/TR/webauthn-3/",
+        note: "The WebAuthn standard passkeys are built on.",
+      },
     ],
   },
   {
