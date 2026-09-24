@@ -1,10 +1,12 @@
 export const navLinks = [
   { href: "/", label: "Home", icon: IconHome },
   { href: "/explore", label: "Explore", icon: IconCompass },
+  { href: "/navigate", label: "Navigate", icon: IconNetwork },
   { href: "/learn", label: "Learn", icon: IconBook },
   { href: "/playground", label: "Playground", icon: IconFlask },
   { href: "/compare", label: "Compare", icon: IconTable },
   { href: "/glossary", label: "Glossary", icon: IconGlossary },
+  { href: "/references", label: "References", icon: IconReferences },
   { href: "/migration-checklist", label: "Checklist", icon: IconClipboard },
   { href: "/assess", label: "Assess", icon: IconChecklist },
 ];
@@ -89,6 +91,29 @@ export function IconClipboard() {
       <rect x="6" y="3" width="12" height="18" rx="2" />
       <path d="M9 3h6v3H9z" />
       <path d="M9 12h6M9 16h6" />
+    </svg>
+  );
+}
+
+export function IconNetwork() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <circle cx="5" cy="6" r="2.5" />
+      <circle cx="19" cy="6" r="2.5" />
+      <circle cx="12" cy="13" r="2.5" />
+      <circle cx="6" cy="20" r="2.5" />
+      <circle cx="18" cy="20" r="2.5" />
+      <path d="M7 7.5 10 11.5M17 7.5 14 11.5M10.5 15 7.5 18M13.5 15 16.5 18" />
+    </svg>
+  );
+}
+
+export function IconReferences() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <path d="M6 3h13v18H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <path d="M9 7h7M9 11h7" />
+      <path d="M4 17.5V19" />
     </svg>
   );
 }

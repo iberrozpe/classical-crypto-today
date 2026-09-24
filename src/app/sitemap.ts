@@ -9,10 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "/explore",
+    "/navigate",
     "/learn",
     "/playground",
     "/compare",
     "/glossary",
+    "/references",
     "/migration-checklist",
     "/assess",
   ].map((path) => ({

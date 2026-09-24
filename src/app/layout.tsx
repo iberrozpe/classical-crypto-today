@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
+import Breadcrumb from "@/components/Breadcrumb";
 import Footer from "@/components/Footer";
 import "katex/dist/katex.min.css";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Sidebar />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <MobileNav />
+          <Breadcrumb />
           <main className="min-w-0 flex-1">{children}</main>
           <Footer />
         </div>
