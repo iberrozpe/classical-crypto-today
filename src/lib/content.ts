@@ -2118,7 +2118,7 @@ export const modules: Module[] = [
     title: "JSON Web Tokens & API authentication",
     summary:
       "JWTs put a signed claim in every request header. They're everywhere in modern APIs — and a few well-known implementation mistakes keep recurring.",
-    minutes: 22,
+    minutes: 28,
     category: "Protocols",
     tags: ["developer", "architect"],
     sections: [
@@ -2199,9 +2199,46 @@ export const modules: Module[] = [
         },
       },
       {
-        heading: "Well-known implementation pitfalls",
+        heading: "Revocation: the problem JWTs don't solve",
         body: [
-          "The \"alg: none\" vulnerability let an attacker submit a token whose header claims no signature algorithm was used, and some early libraries would accept it as valid — effectively an unsigned token treated as trusted.",
+          "The \"can't be revoked before expiry\" line in the comparison above is worth taking seriously, because it's a real operational gap, not a footnote: once a JWT is issued, it stays valid until its exp claim says otherwise, no matter what happens on the server afterward — a stolen laptop, a fired employee, a compromised API key all leave a window where the already-issued token still works, because there's no server-side record to delete the way there is for an opaque session token.",
+          "The standard real-world fix doesn't abandon JWTs — it limits the blast radius. Issue a short-lived JWT access token (commonly 5–15 minutes) for the actual API calls, paired with a long-lived opaque refresh token that is looked up server-side, exactly like a traditional session token, whenever the client needs a new access token. Revoking access now means revoking the refresh token — instant, just like an opaque token — while the worst an attacker can do with a stolen access token is use it until its own short expiry runs out.",
+        ],
+        practice: [
+          {
+            prompt: "An application issues 15-minute JWT access tokens alongside revocable refresh tokens. A user's device is reported stolen and its refresh token is revoked immediately. In the worst case, for how many more minutes could an attacker who already has a valid, unexpired access token keep using it?",
+            hint: "Revoking the refresh token stops new access tokens from being issued — it does nothing to an access token that's already out there.",
+            placeholder: "minutes",
+            answer: "15",
+            explanation: "Up to 15 minutes — the full remaining lifetime of whatever access token the attacker already holds, since revoking the refresh token only prevents minting new ones. This is precisely the trade-off: shortening the access-token lifetime shrinks this window directly, at the cost of more frequent (automatic, invisible-to-the-user) refresh calls.",
+          },
+        ],
+      },
+      {
+        heading: "Key rotation: the kid header and JWKS",
+        body: [
+          "Production signing keys get rotated periodically, for the same reasons any key does — but a verifier needs to know which of possibly several active public keys produced a given token, especially during the overlap window while an old key is still valid for already-issued tokens and a new key is signing fresh ones. The kid (Key ID) field in a JWT's header names exactly which key was used.",
+          "Verifiers resolve that kid against a JWKS (JSON Web Key Set) — a JSON document, typically published at a well-known endpoint, listing every currently valid public key by its kid. Rotating a signing key becomes: publish the new public key in the JWKS alongside the old one, start signing new tokens with the new key, and only remove the old public key from the JWKS once every token it ever signed has expired — seamless rotation with zero downtime and no already-issued token ever breaking early.",
+        ],
+      },
+      {
+        heading: "The \"alg: none\" attack: an unsigned token treated as trusted",
+        advanced: true,
+        body: [
+          "Before algorithm confusion, an even simpler flaw made the same rounds: JWT's header can legally specify \"alg\": \"none\", meaning no signature at all — a legitimate feature for specific narrow cases where a token's integrity is already guaranteed some other way. Some early library implementations, when asked to merely \"verify\" a token, would honor whatever algorithm the header claimed, including none — silently treating a completely unsigned token as valid.",
+          "The forgery is trivial once that flaw exists: take any legitimate token, base64url-decode the header and payload, edit the payload however you like (escalate a role, change a user ID), set the header's alg back to \"none\", and submit the result with an empty third segment. A vulnerable verifier, trusting the header's own claim about which algorithm to use, never notices nothing was actually signed.",
+        ],
+        math: [
+          { expr: "\\text{token} = \\text{base64url(header)} + \".\" + \\text{base64url(payload)} + \".\"\\quad \\text{(empty signature segment)}" },
+        ],
+        practice: [
+          {
+            prompt: "Decode this JWT header segment and report its \"alg\" value: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0",
+            hint: "Base64url-decode it exactly as you would any other JWT segment — no key is needed to read a header.",
+            placeholder: "alg value",
+            answer: "none",
+            explanation: "Decoded, the header reads {\"alg\":\"none\",\"typ\":\"JWT\"} — a token explicitly claiming to be unsigned. The fix is identical in spirit to algorithm confusion's fix: a correct verifier pins the exact algorithm(s) it expects and rejects everything else outright, rather than ever trusting the header's own say-so about how to verify itself.",
+          },
         ],
       },
       {
@@ -2418,7 +2455,7 @@ export const modules: Module[] = [
     title: "TLS in practice: how HTTPS puts it all together",
     summary:
       "Every padlock icon runs a coordinated handshake combining key exchange, certificates, symmetric encryption, and integrity checks — in under a round trip.",
-    minutes: 18,
+    minutes: 24,
     category: "Protocols",
     tags: ["developer", "architect", "itops", "grc", "curious", "researcher"],
     sections: [
@@ -2471,6 +2508,40 @@ export const modules: Module[] = [
             answer: "256",
             explanation: "AES_256_GCM names its own key size directly: 256 bits. The rest of the suite name decomposes the same way — ECDHE for key exchange, ECDSA for the certificate's signature algorithm, and SHA384 for the handshake's hash function.",
           },
+        ],
+      },
+      {
+        heading: "Session resumption: skipping the handshake on repeat visits",
+        body: [
+          "A full TLS 1.3 handshake is already fast at one round trip, but a returning visitor doesn't even need that: the server issues a session ticket containing a Pre-Shared Key (PSK) derived from the original handshake, and the client presents that ticket on its next connection instead of negotiating a fresh key exchange from scratch. Both sides already share the secret material the PSK was derived from, so there's no new ECDHE exchange or certificate verification to perform — just a quick proof that the client actually holds the PSK.",
+          "This is why a second visit to the same site often feels instant compared to the first: the expensive parts of the handshake (asymmetric key exchange, certificate chain verification) only had to happen once, and every resumed connection reuses that earlier work.",
+        ],
+      },
+      {
+        heading: "0-RTT data: the speed comes with a real trade-off",
+        body: [
+          "TLS 1.3's most aggressive optimization lets a resuming client send encrypted application data in its very first flight — before the handshake even finishes — called 0-RTT (zero round-trip time) or \"early data.\" The catch, spelled out explicitly in the TLS 1.3 spec, is that this early data has no forward secrecy and, critically, no replay protection: unlike the rest of the handshake, nothing fresh from the server has been mixed into the keys protecting that first flight, so an attacker who captures a 0-RTT packet can resend it verbatim and have it accepted again.",
+          "This is exactly why RFC 8446 restricts 0-RTT data to idempotent requests — operations safe to perform more than once, like a GET request — and explicitly warns against using it for anything that changes state, like a purchase or a fund transfer, unless the application layer adds its own replay defense on top.",
+        ],
+        math: [
+          { expr: "\\text{full handshake: 1 RTT before app data} \\qquad \\text{0-RTT resumption: 0 RTT before app data}" },
+        ],
+        advanced: true,
+        practice: [
+          {
+            prompt: "A poorly designed payment API accepts 0-RTT early data for a $50 charge request, with no idempotency protection. An attacker captures that 0-RTT packet and replays it 5 additional times, and the server processes every one. Including the original, how many times is the customer charged?",
+            hint: "The original request plus every successful replay each triggers a charge.",
+            placeholder: "times charged",
+            answer: "6",
+            explanation: "1 original request + 5 replays = 6 charges — exactly the failure mode RFC 8446 warns about. This is precisely why 0-RTT is restricted to idempotent operations by default, and why any state-changing endpoint that accepts it needs its own replay defense (like a one-time nonce) on top of what TLS provides.",
+          },
+        ],
+      },
+      {
+        heading: "SNI: the metadata leak TLS didn't originally close",
+        body: [
+          "Server Name Indication (SNI) is what lets one IP address terminate TLS for thousands of different hostnames — the client includes the hostname it's connecting to in its very first message, so the server (or a reverse proxy in front of many sites) knows which certificate to present before the handshake has established any encryption. That requirement is also the problem: for the entire history of TLS 1.3 up to recently, the hostname in SNI was sent in cleartext, meaning anyone observing the network traffic — including on an otherwise fully \"encrypted\" HTTPS connection — could see exactly which site a client was visiting, even though the page content itself stayed protected.",
+          "Encrypted Client Hello (ECH), standardized as RFC 9849 in March 2026, closes this specific gap by encrypting the entire ClientHello — including SNI — using a public key published in DNS for the destination, so the actual hostname is hidden from network observers as well. Browser and CDN support is already substantial: Chrome, Firefox, and Safari all support ECH by default under common conditions, and Cloudflare, Fastly, and Akamai all support it on the server side.",
         ],
       },
       {
@@ -3087,7 +3158,7 @@ export const personas: Persona[] = [
     tagline: "Obligations, inventory & evidence focus",
     pitch:
       "Auditors want a cryptographic bill of materials. Know which algorithms are in scope before you can attest to anything.",
-    firstWin: { label: "Map the algorithms you must inventory", slug: "tls-in-practice", minutes: 18 },
+    firstWin: { label: "Map the algorithms you must inventory", slug: "tls-in-practice", minutes: 24 },
     moduleSlugs: [
       "tls-in-practice",
       "key-sizes-and-security-levels",
@@ -3103,7 +3174,7 @@ export const personas: Persona[] = [
     tagline: "Implementation & protocol focus",
     pitch:
       "RSA, AES, ECDSA and SHA-2 are already in every library you import. Understand what they actually do before you touch a crypto API.",
-    firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 18 },
+    firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 24 },
     moduleSlugs: [
       "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
@@ -3153,7 +3224,7 @@ export const personas: Persona[] = [
     tagline: "Deploy & operate focus",
     pitch:
       "Certificates, cipher suites, key sizes — the settings you configure every day encode decades of cryptographic design. Know what they mean.",
-    firstWin: { label: "Understand what a cipher suite actually says", slug: "tls-in-practice", minutes: 18 },
+    firstWin: { label: "Understand what a cipher suite actually says", slug: "tls-in-practice", minutes: 24 },
     moduleSlugs: [
       "symmetric-key-aes",
       "stream-ciphers-chacha20",
@@ -3180,7 +3251,7 @@ export const personas: Persona[] = [
     tagline: "New to cryptography",
     pitch:
       "Your browser's padlock icon runs on math you use every day without seeing. Here's what's actually happening behind it.",
-    firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 18 },
+    firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 24 },
     moduleSlugs: [
       "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
