@@ -52,6 +52,7 @@ export interface Section {
   math?: MathBlock[];
   diagram?: DiagramSpec;
   practice?: PracticeProblem[];
+  advanced?: boolean;
 }
 
 export interface Module {
@@ -70,7 +71,7 @@ export const modules: Module[] = [
     title: "The history and purpose of cryptography",
     summary:
       "Before the math: what cryptography is actually trying to do, and the 2,500-year arms race between codemakers and codebreakers that got us here.",
-    minutes: 22,
+    minutes: 28,
     category: "Foundations",
     tags: ["executive", "grc", "developer", "architect", "researcher", "curious"],
     sections: [
@@ -132,6 +133,19 @@ export const modules: Module[] = [
         body: [
           "Around 850 CE, the Arab polymath Al-Kindi wrote the oldest surviving manuscript on breaking ciphers. His insight was statistical: in any given language, some letters occur far more often than others (E, in English), so a simple substitution cipher preserves those frequencies — count the letters in the ciphertext, match the most common one to the language's most common letter, and the rest unravels.",
           "This is the moment cryptography stopped being purely a craft of clever concealment and became a contest with a countermeasure — every cipher design from this point on had to survive someone actively trying to break it, not just someone who happened not to notice it.",
+          "Worked example: the ciphertext WKHOHWWHUQHYHUVHHPVWRDUULYH has H as its single most frequent letter (8 out of 27 characters). Since E is the most common letter in English, that maps H back to E — and H is 3 positions after E in the alphabet, so the shift is 3. Reversing a shift-3 Caesar cipher on this ciphertext recovers THELETTERNEVERSEEMSTOARRIVE. No trial-and-error over 26 possible shifts was needed — just one frequency count.",
+        ],
+        math: [
+          { expr: "\\text{shift} = (\\text{most frequent ciphertext letter}) - \\text{E} \\quad \\text{(alphabet position difference)}" },
+        ],
+        practice: [
+          {
+            prompt: "A Caesar-shifted ciphertext is XPPEXPLEESPRLEPLEESCPP. Counting letters shows P is by far the most frequent (7 occurrences). Using P ↔ E, find the shift and decrypt the message.",
+            hint: "P is the 15th letter (0-indexed) and E is the 4th, so the shift is 15 − 4 = 11. Shift every ciphertext letter backward by that amount.",
+            placeholder: "plaintext",
+            answer: "MEETMEATTHEGATEATTHREE",
+            explanation: "P (index 15) minus E (index 4) gives a shift of 11. Reversing an 11-position shift on XPPEXPLEESPRLEPLEESCPP recovers MEETMEATTHEGATEATTHREE — the same principle Al-Kindi described nearly 1,200 years ago, applied to a message that would have taken up to 25 guesses to crack by brute force alone.",
+          },
         ],
       },
       {
@@ -139,6 +153,39 @@ export const modules: Module[] = [
         body: [
           "The response to frequency analysis was to stop using one substitution and use many: a polyalphabetic cipher that shifts by a different amount for each letter, following a repeating keyword, so no single letter frequency stays fixed. This scheme was first described by Giovan Battista Bellaso in 1553 — though it's almost universally known today as the Vigenère cipher, after Blaise de Vigenère, who in 1586 published a related but different autokey cipher and was credited with Bellaso's work by a 19th-century historian's mistake.",
           "Whoever gets the credit, the cipher earned its nickname \"le chiffre indéchiffrable\" (the indecipherable cipher) and held that reputation for roughly three centuries. Charles Babbage privately broke it around 1854 using a technique based on finding repeated sequences in the ciphertext to estimate the keyword's length, but never published the result; Friedrich Kasiski independently rediscovered and published the same method in 1863, and the cipher's reputation never recovered.",
+          "Worked example: encrypt MEETATNOON with the keyword KEY. Each plaintext letter shifts by the position of the corresponding (repeating) key letter: M shifts by K (10) → W; E shifts by E (4) → I; E shifts by Y (24) → C; T shifts by K (10) → D; and so on, the key repeating as KEYKEYKEYK across the message. The result is WICDERXSMX — and unlike a single Caesar shift, no single letter frequency in this ciphertext reliably maps back to E, because each position used a different shift.",
+        ],
+        math: [
+          { expr: "C_i = (P_i + K_{i \\bmod |K|}) \\bmod 26 \\quad \\text{(key letters and plaintext both 0-indexed, A=0)}" },
+        ],
+        practice: [
+          {
+            prompt: "Encrypt RETREATNOW with the Vigenère keyword FOX (repeating as FOXFOXFOXF across the message).",
+            hint: "Shift each plaintext letter forward by its corresponding key letter's position (F=5, O=14, X=23), wrapping the alphabet and repeating the key as needed.",
+            placeholder: "ciphertext",
+            answer: "WSQWSXYBLB",
+            explanation: "Shifting each letter by its key letter's position (F=5, O=14, X=23) gives, in order: R+F=W, E+O=S, T+X=Q, R+F=W, E+O=S, A+X=X, T+F=Y, N+O=B, O+X=L, W+F=B — spelling WSQWSXYBLB. Notice the two R's and two E's in the plaintext land on different key positions and produce different ciphertext letters each time, which is exactly the property that defeats simple frequency analysis.",
+          },
+        ],
+      },
+      {
+        heading: "Kasiski examination: how the \"indecipherable\" cipher was actually broken",
+        body: [
+          "Frequency analysis fails directly against Vigenère because the shift changes every letter — but it doesn't fail against the keyword's length, and once that length is known, the ciphertext splits into that many independent Caesar-shifted streams, each crackable by ordinary frequency analysis. Kasiski's method finds the length first: search the ciphertext for repeated sequences of three or more letters, and note the distance between each repeat. Since identical plaintext sequences only produce identical ciphertext when they align with the same point in the repeating key, every such distance is a multiple of the key length — and the greatest common divisor of enough distances (the very same GCD from the math foundations module) reveals it.",
+          "Worked example: encrypting CRYPTOISSHORTFORCRYPTOGRAPHY with the 4-letter key ABCD gives CSASTPKVSIQUTGQUCSASTPIUAQJB. The 5-letter sequence CSAST appears twice: once at the very start, and again 16 letters later. 16 is a multiple of 4 — and if this were the only repeat found, GCD(16) = 16 would already narrow the key length to a divisor of 16 (1, 2, 4, 8, or 16); a second repeated sequence at a distance of, say, 12 would narrow it further, since GCD(16, 12) = 4, exactly the true key length.",
+        ],
+        math: [
+          { expr: "\\text{key length} \\mid \\gcd(\\text{distance}_1, \\text{distance}_2, \\ldots)" },
+        ],
+        advanced: true,
+        practice: [
+          {
+            prompt: "Kasiski examination of a ciphertext finds repeated sequences at distances 18 and 30 apart. What key length does gcd(18, 30) suggest?",
+            hint: "Use the Euclidean algorithm from the math foundations module: gcd(30, 18) = gcd(18, 12) = gcd(12, 6) = 6.",
+            placeholder: "key length",
+            answer: "6",
+            explanation: "gcd(18, 30) = 6. With the key length narrowed to 6, the ciphertext splits into 6 separate streams (every 6th letter), each one a plain Caesar shift crackable by the same frequency-analysis technique used against the single-shift Caesar cipher above — which is exactly how Babbage and Kasiski dismantled a three-century reputation for unbreakability.",
+          },
         ],
       },
       {
@@ -2297,10 +2344,30 @@ export const modules: Module[] = [
     title: "Random number generation: the primitive everything else depends on",
     summary:
       "Every key, nonce, and IV in this catalog assumes truly unpredictable randomness. When that assumption breaks, everything built on top breaks with it.",
-    minutes: 12,
+    minutes: 15,
     category: "Foundations",
     tags: ["developer", "architect", "itops", "researcher"],
     sections: [
+      {
+        heading: "Entropy: what \"random\" actually means, quantitatively",
+        body: [
+          "Before asking whether a source is random enough for cryptography, it helps to have a precise way to measure \"how random.\" Claude Shannon (the same Shannon behind the one-time pad's perfect-secrecy proof, covered in the history module) defined entropy as the quantity of unpredictability, or \"surprise,\" in a source, measured in bits: for a source where outcome i happens with probability pᵢ, entropy is H = −Σ pᵢ·log₂(pᵢ). A fair coin flip carries exactly 1 bit of entropy. A biased coin that lands heads 99% of the time carries far less — it's still technically random, but far more predictable, and its entropy reflects that directly.",
+          "Cryptography almost always deals with the simpler special case: every one of N possible outcomes equally likely. There, the general formula collapses to a single logarithm: H = log₂(N) bits. This is exactly the same \"bits of security\" language used throughout this catalog — a 128-bit AES key drawn uniformly at random has 128 bits of entropy, precisely because its keyspace has 2¹²⁸ equally likely values, no more and no less.",
+          "Worked example: an 8-character password drawn uniformly from the 26 lowercase letters has a keyspace of 26⁸ ≈ 208 billion possibilities. Its entropy is log₂(26⁸) = 8 × log₂(26) ≈ 8 × 4.70 ≈ 37.6 bits — low enough that modern hardware can exhaust it in a practical amount of time, despite the password \"looking\" reasonably long to a human reader.",
+        ],
+        math: [
+          { expr: "H = -\\sum_i p_i \\log_2(p_i) \\qquad H = \\log_2(N) \\ \\text{when all } N \\text{ outcomes are equally likely}" },
+        ],
+        practice: [
+          {
+            prompt: "A password generator draws 4 characters uniformly at random from the 16 hexadecimal digits (0–9, a–f). How many bits of entropy does the resulting password have?",
+            hint: "Each hex digit is 1-of-16, so each character contributes log₂(16) bits. Multiply by the number of characters.",
+            placeholder: "bits",
+            answer: "16",
+            explanation: "log₂(16) = 4 bits per character (since 16 = 2⁴), and 4 characters × 4 bits = 16 bits of total entropy — almost exactly the keyspace size of the Debian OpenSSL bug covered later in this module, despite this one looking like a perfectly ordinary short password.",
+          },
+        ],
+      },
       {
         heading: "CSPRNGs vs. ordinary randomness",
         body: [
@@ -2711,7 +2778,7 @@ export const personas: Persona[] = [
     label: "Researcher / Academic",
     tagline: "Comprehensive, no filtering",
     pitch: "Open the full catalog. Every module, in order, with no persona filtering.",
-    firstWin: { label: "Start at the very beginning", slug: "history-and-purpose-of-cryptography", minutes: 22 },
+    firstWin: { label: "Start at the very beginning", slug: "history-and-purpose-of-cryptography", minutes: 28 },
     moduleSlugs: modules.map((m) => m.slug),
   },
   {

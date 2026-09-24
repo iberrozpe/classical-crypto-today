@@ -59,21 +59,47 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
       </div>
 
       <article className="mt-12 space-y-10">
-        {mod.sections.map((s) => (
-          <section key={s.heading}>
-            <h2 className="text-xl font-semibold text-foreground">{s.heading}</h2>
-            <div className="mt-3 space-y-4">
-              {s.body.map((p, i) => (
-                <p key={i} className="leading-relaxed text-muted">
-                  {p}
-                </p>
-              ))}
-            </div>
-            {s.diagram && <DiagramRenderer diagram={s.diagram} />}
-            {s.math?.map((m, i) => <Math key={i} expr={m.expr} caption={m.caption} />)}
-            {s.practice && <PracticeProblems problems={s.practice} />}
-          </section>
-        ))}
+        {mod.sections.map((s) =>
+          s.advanced ? (
+            <details key={s.heading} className="group rounded-lg border border-border open:border-transparent">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:content-none">
+                <span className="flex items-center gap-3">
+                  <span className="shrink-0 rounded-full border border-accent/40 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-accent">
+                    Go deeper
+                  </span>
+                  <span className="text-xl font-semibold text-foreground">{s.heading}</span>
+                </span>
+                <span className="shrink-0 text-muted transition group-open:rotate-180">⌄</span>
+              </summary>
+              <div className="px-5 pb-5">
+                <div className="space-y-4">
+                  {s.body.map((p, i) => (
+                    <p key={i} className="leading-relaxed text-muted">
+                      {p}
+                    </p>
+                  ))}
+                </div>
+                {s.diagram && <DiagramRenderer diagram={s.diagram} />}
+                {s.math?.map((m, i) => <Math key={i} expr={m.expr} caption={m.caption} />)}
+                {s.practice && <PracticeProblems problems={s.practice} />}
+              </div>
+            </details>
+          ) : (
+            <section key={s.heading}>
+              <h2 className="text-xl font-semibold text-foreground">{s.heading}</h2>
+              <div className="mt-3 space-y-4">
+                {s.body.map((p, i) => (
+                  <p key={i} className="leading-relaxed text-muted">
+                    {p}
+                  </p>
+                ))}
+              </div>
+              {s.diagram && <DiagramRenderer diagram={s.diagram} />}
+              {s.math?.map((m, i) => <Math key={i} expr={m.expr} caption={m.caption} />)}
+              {s.practice && <PracticeProblems problems={s.practice} />}
+            </section>
+          )
+        )}
       </article>
 
       {quiz && (
