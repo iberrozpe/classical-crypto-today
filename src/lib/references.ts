@@ -116,6 +116,21 @@ export const referenceGroups: ReferenceGroup[] = [
     ],
   },
   {
+    heading: "Key management, PKI automation & federated identity",
+    references: [
+      { title: "RFC 3394 — Advanced Encryption Standard (AES) Key Wrap Algorithm", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc3394" },
+      { title: "RFC 8555 — Automatic Certificate Management Environment (ACME)", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8555", note: "The protocol behind Let's Encrypt and automated certificate issuance." },
+      { title: "RFC 6749 — The OAuth 2.0 Authorization Framework", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc6749" },
+      { title: "RFC 7636 — Proof Key for Code Exchange by OAuth Public Clients (PKCE)", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc7636" },
+      { title: "OpenID Connect Core 1.0", publisher: "OpenID Foundation", url: "https://openid.net/specs/openid-connect-core-1_0.html" },
+      {
+        title: "Assertions and Protocols for the OASIS Security Assertion Markup Language (SAML) V2.0",
+        publisher: "OASIS Standard",
+        url: "https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf",
+      },
+    ],
+  },
+  {
     heading: "Post-quantum cryptography & the quantum threat",
     references: [
       { title: "FIPS 203 — Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)", publisher: "NIST", url: "https://csrc.nist.gov/pubs/fips/203/final" },

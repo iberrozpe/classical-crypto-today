@@ -22,6 +22,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Symmetric-key": "#f0b429",
   Protocols: "#38bdf8",
   Practice: "#fb7185",
+  "Use Cases": "#4ade80",
 };
 
 const WIDTH = 900;
@@ -33,7 +34,14 @@ const CLICK_THRESHOLD = 5;
 function radiusFor(type: GraphNode["type"]) {
   if (type === "category") return 16;
   if (type === "module") return 9;
+  if (type === "usecase") return 8;
   return 6;
+}
+
+function typeLabel(type: GraphNode["type"]) {
+  if (type === "module") return "Learn module";
+  if (type === "usecase") return "Use case";
+  return "Playground tool";
 }
 
 export default function NavigateGraph({
@@ -263,7 +271,7 @@ export default function NavigateGraph({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide" style={{ color: CATEGORY_COLORS[selected.category] }}>
-                  {selected.category} · {selected.type === "module" ? "Learn module" : "Playground tool"}
+                  {selected.category} · {typeLabel(selected.type)}
                 </p>
                 <p className="mt-1 font-semibold text-foreground">{selected.label}</p>
               </div>
@@ -279,7 +287,7 @@ export default function NavigateGraph({
             {selected.summary && <p className="mt-2 text-sm text-muted">{selected.summary}</p>}
             {selected.href && (
               <Link href={selected.href} className="mt-3 inline-block text-sm font-medium text-accent underline underline-offset-4">
-                Open {selected.type === "module" ? "module" : "tool"} →
+                Open {selected.type === "module" ? "module" : selected.type === "usecase" ? "use case" : "tool"} →
               </Link>
             )}
           </div>

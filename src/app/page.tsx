@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
         <Link
           href="/explore"
           className="rounded-lg border border-border p-6 transition hover:border-accent"
@@ -83,6 +83,15 @@ export default function Home() {
           <p className="mt-2 text-sm text-muted">
             The full module catalog — symmetric crypto, public-key crypto, and how TLS
             combines them.
+          </p>
+        </Link>
+        <Link
+          href="/use-cases"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Use Cases</h3>
+          <p className="mt-2 text-sm text-muted">
+            How those primitives combine in production — envelope encryption, PKI, OAuth2/OIDC/SAML.
           </p>
         </Link>
         <Link

@@ -8,10 +8,12 @@ export default function QuizRunner({
   questions,
   moduleSlug,
   moduleTitle,
+  basePath = "/learn",
 }: {
   questions: QuizQuestion[];
   moduleSlug: string;
   moduleTitle: string;
+  basePath?: string;
 }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
@@ -113,7 +115,7 @@ export default function QuizRunner({
               Retake →
             </button>
             <Link
-              href={`/learn/${moduleSlug}`}
+              href={`${basePath}/${moduleSlug}`}
               className="text-sm font-medium text-accent underline underline-offset-4"
             >
               Back to the module →

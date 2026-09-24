@@ -4,6 +4,7 @@ import { furtherReadingSites, furtherReadingBooks } from "@/lib/further-reading"
 import { modules } from "@/lib/content";
 import { playgroundTools } from "@/lib/playground";
 import { glossaryTerms } from "@/lib/glossary";
+import { useCases } from "@/lib/usecases";
 
 export const metadata: Metadata = {
   title: "About — Classical Crypto Today",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 const sections = [
   { href: "/explore", title: "Explore", body: "Pick a persona — executive, GRC, developer, architect, IT ops, researcher, or curious — and get a reading path tailored to it. Nothing is hidden from anyone; a persona just reorders what you see first." },
   { href: "/learn", title: "Learn", body: `${modules.length} modules, from the history of cryptography through RSA, ECC, AES, TLS, and the post-quantum threat, each with diagrams, worked examples, and real formulas.` },
+  { href: "/use-cases", title: "Use Cases", body: `${useCases.length} deep dives into how those primitives combine in production — envelope encryption, key wrapping, running a PKI, OAuth2/OIDC/SAML — each linking back to Learn instead of re-explaining the math.` },
   { href: "/playground", title: "Playground", body: `${playgroundTools.length} tools that run real cryptography in your browser via the Web Crypto API — AES-GCM, RSA-OAEP, ECDSA, X3DH, and more. Nothing is simulated, and nothing leaves your browser.` },
   { href: "/navigate", title: "Navigate", body: "Every module, tool, and category as a single connected graph, for when you'd rather explore by clicking around than by reading a list." },
   { href: "/compare", title: "Compare", body: "Side-by-side cheat sheets — RSA vs. ECC vs. Diffie-Hellman, AES modes, hash functions — for when you already know the material and just need the numbers." },

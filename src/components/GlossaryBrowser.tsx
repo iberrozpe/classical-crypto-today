@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { GlossaryTerm } from "@/lib/glossary";
 import { getModule } from "@/lib/content";
+import { getUseCase } from "@/lib/usecases";
 
 export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
   const [query, setQuery] = useState("");
@@ -68,11 +69,14 @@ export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
                 const modules = (t.relatedModules ?? [])
                   .map((slug) => getModule(slug))
                   .filter((m): m is NonNullable<typeof m> => Boolean(m));
+                const useCaseLinks = (t.relatedModules ?? [])
+                  .map((slug) => getUseCase(slug))
+                  .filter((u): u is NonNullable<typeof u> => Boolean(u));
                 return (
                   <div key={t.term} className="border-b border-border pb-5 last:border-0">
                     <p className="font-semibold text-foreground">{t.term}</p>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.definition}</p>
-                    {modules.length > 0 && (
+                    {(modules.length > 0 || useCaseLinks.length > 0) && (
                       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                         {modules.map((m) => (
                           <Link
@@ -81,6 +85,15 @@ export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
                             className="text-xs font-medium text-accent underline underline-offset-4"
                           >
                             {m.title} →
+                          </Link>
+                        ))}
+                        {useCaseLinks.map((u) => (
+                          <Link
+                            key={u.slug}
+                            href={`/use-cases/${u.slug}`}
+                            className="text-xs font-medium text-accent underline underline-offset-4"
+                          >
+                            {u.title} →
                           </Link>
                         ))}
                       </div>

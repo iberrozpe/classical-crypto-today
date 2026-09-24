@@ -3,6 +3,7 @@ export const navLinks = [
   { href: "/explore", label: "Explore", icon: IconCompass },
   { href: "/navigate", label: "Navigate", icon: IconNetwork },
   { href: "/learn", label: "Learn", icon: IconBook },
+  { href: "/use-cases", label: "Use Cases", icon: IconLayers },
   { href: "/playground", label: "Playground", icon: IconFlask },
   { href: "/compare", label: "Compare", icon: IconTable },
   { href: "/glossary", label: "Glossary", icon: IconGlossary },
@@ -41,6 +42,16 @@ export function IconBook() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+  );
+}
+
+export function IconLayers() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <path d="m12 3 9 5-9 5-9-5 9-5z" />
+      <path d="m3 13 9 5 9-5" />
+      <path d="m3 18 9 5 9-5" />
     </svg>
   );
 }

@@ -6,6 +6,12 @@ export interface GlossaryTerm {
 
 export const glossaryTerms: GlossaryTerm[] = [
   {
+    term: "ACME (Automatic Certificate Management Environment)",
+    definition:
+      "The protocol behind Let's Encrypt (RFC 8555) that automates domain-control validation and certificate issuance/renewal entirely without human involvement, via HTTP-01, DNS-01, or TLS-ALPN-01 challenges — the reason short-lived certificates are operationally viable at scale.",
+    relatedModules: ["pki-in-production"],
+  },
+  {
     term: "AEAD (Authenticated Encryption with Associated Data)",
     definition:
       "An encryption mode that provides confidentiality and integrity together in one pass, and can also authenticate extra data that isn't encrypted (like a packet header). AES-GCM and ChaCha20-Poly1305 are both AEAD ciphers.",
@@ -16,6 +22,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "The current standard symmetric-key block cipher, operating on 128-bit blocks with 128-, 192-, or 256-bit keys, selected by NIST in 2001 after a public competition (winning design: Rijndael).",
     relatedModules: ["symmetric-key-aes"],
+  },
+  {
+    term: "AES Key Wrap (RFC 3394)",
+    definition:
+      "A dedicated construction for encrypting key material specifically — deterministic (no IV/nonce needed, since keys are already high-entropy), with a built-in 8-byte integrity check that makes unwrapping with the wrong KEK fail immediately rather than silently.",
+    relatedModules: ["kms-key-wrapping-and-exchange"],
   },
   {
     term: "AES-NI",
@@ -131,6 +143,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["elliptic-curve-cryptography"],
   },
   {
+    term: "DEK / KEK (Data-Encryption Key / Key-Encryption Key)",
+    definition:
+      "The two-key pattern behind envelope encryption: a DEK does the actual bulk encryption locally and is never stored in plaintext; a KEK — held by a KMS/HSM and never exported — encrypts (\"wraps\") the DEK, so only the KMS can turn a stored wrapped DEK back into something usable.",
+    relatedModules: ["kms-envelope-encryption"],
+  },
+  {
     term: "DES (Data Encryption Standard)",
     definition:
       "The first publicly standardized, thoroughly analyzed symmetric cipher (1977), using a 16-round Feistel network on 64-bit blocks with a 56-bit effective key — retired not for a design flaw, but because that key became exhaustively searchable.",
@@ -195,6 +213,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "A measure of genuine unpredictability. CSPRNGs are seeded from physical entropy sources (hardware interrupt timing, dedicated RNG chips) rather than anything an attacker could predict or replay.",
     relatedModules: ["random-number-generation"],
+  },
+  {
+    term: "Envelope encryption",
+    definition:
+      "The pattern every major cloud KMS uses: a fast, local Data-Encryption Key (DEK) does the actual bulk encryption, while the KMS's master key (KEK) only ever wraps that small DEK — never the data itself. Rotating the KEK then never requires re-encrypting stored data.",
+    relatedModules: ["kms-envelope-encryption"],
   },
   {
     term: "Ephemeral key",
@@ -285,6 +309,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["key-derivation-functions"],
   },
   {
+    term: "Key ceremony",
+    definition:
+      "The scripted, audited, multi-party process used to generate a root CA's private key — the HSM generates it internally, it never exists outside the hardware boundary, and sensitive operations require multiple trusted individuals to jointly authorize, echoing threshold secret sharing.",
+    relatedModules: ["pki-in-production"],
+  },
+  {
     term: "Length-extension attack",
     definition:
       "An attack exploiting the Merkle-Damgård construction: given only H(message) and its length, an attacker can compute H(message ‖ extra) for attacker-chosen data, without ever knowing the original message.",
@@ -355,10 +385,22 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["rsa-padding-oaep-pkcs1"],
   },
   {
+    term: "OAuth2",
+    definition:
+      "A delegated authorization framework — it lets an application act on a user's behalf with a specific, revocable scope of access, and by itself says nothing about who the user actually is. That identity gap is exactly what OIDC adds.",
+    relatedModules: ["federated-identity-oauth-oidc-saml"],
+  },
+  {
     term: "OCSP (Online Certificate Status Protocol)",
     definition:
       "A protocol letting a client ask a CA in real time whether a specific certificate is still valid, as an alternative to downloading a full CRL. OCSP stapling moves this query to the server to avoid a per-client round trip and metadata leak.",
     relatedModules: ["digital-certificates-x509"],
+  },
+  {
+    term: "OIDC (OpenID Connect)",
+    definition:
+      "An authentication layer built directly on top of OAuth2, adding the one thing OAuth2 leaves out: the ID token, a signed JWT with standardized identity claims (sub, iss, aud, exp) proving who the user is.",
+    relatedModules: ["federated-identity-oauth-oidc-saml", "jwt-and-api-auth"],
   },
   {
     term: "One-way function",
@@ -383,6 +425,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "A stronger phrasing of forward secrecy, emphasizing that every session's key exchange uses fresh ephemeral keys, so no single key compromise — past or future — exposes more than one session.",
     relatedModules: ["diffie-hellman-key-exchange"],
+  },
+  {
+    term: "PKCE (Proof Key for Code Exchange)",
+    definition:
+      "An OAuth2 extension for clients that can't safely hold a secret (mobile apps, single-page apps): the client generates a random secret locally and proves possession of it at token exchange, so an intercepted authorization code alone can't be redeemed by an attacker.",
+    relatedModules: ["federated-identity-oauth-oidc-saml"],
   },
   {
     term: "PKCS#1 v1.5",
@@ -435,6 +483,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "A unique random value appended to a password before hashing, ensuring identical passwords don't produce identical hashes — defeats precomputed rainbow-table attacks, but does nothing to slow down an attacker targeting one specific hash (that's the KDF's job).",
     relatedModules: ["key-derivation-functions"],
+  },
+  {
+    term: "SAML (Security Assertion Markup Language)",
+    definition:
+      "An older, XML-based authentication and single-sign-on standard, predating JWTs — an Identity Provider issues a signed XML assertion (via XML-DSig) that a browser carries to a Service Provider via redirect or form POST. Still common in enterprise SSO alongside the more modern OIDC.",
+    relatedModules: ["federated-identity-oauth-oidc-saml"],
   },
   {
     term: "Schnorr signature",
