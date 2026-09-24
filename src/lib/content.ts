@@ -663,7 +663,7 @@ export const modules: Module[] = [
     title: "Stream ciphers & ChaCha20-Poly1305",
     summary:
       "Not every symmetric cipher works in fixed blocks. ChaCha20 generates a keystream instead — and paired with Poly1305, it's AES-GCM's fastest rival.",
-    minutes: 10,
+    minutes: 12,
     category: "Symmetric-key",
     tags: ["developer", "architect", "itops", "researcher"],
     sections: [
@@ -705,6 +705,25 @@ export const modules: Module[] = [
         heading: "Where it's actually used",
         body: [
           "ChaCha20-Poly1305 is a standard cipher suite in TLS 1.3, the default cipher for the WireGuard VPN protocol, and widely used on mobile devices and older or low-power hardware that lacks AES hardware acceleration (AES-NI), where ChaCha20 in pure software runs significantly faster and in constant time.",
+        ],
+      },
+      {
+        heading: "Nonce reuse: the one mistake that breaks every stream cipher",
+        body: [
+          "Every stream cipher, ChaCha20 included, shares one absolute rule: the same key-and-nonce pair must never generate keystream for two different messages. Reuse it, and the keystream itself cancels out of the math entirely, no key-breaking required — because C₁ ⊕ C₂ = (P₁ ⊕ K) ⊕ (P₂ ⊕ K) = P₁ ⊕ P₂, an equation that involves only the two plaintexts, with K gone. Knowing (or guessing) either plaintext instantly reveals the other.",
+          "This is the same two-time-pad weakness that affects any XOR-based keystream cipher, and it's exactly why protocols built on ChaCha20 or AES-CTR are so strict about nonce uniqueness — a repeated nonce (from a buggy counter, a restarted process reusing state, or a nonce that's too short and collides by chance) is a full break, not a partial weakening.",
+        ],
+        math: [
+          { expr: "C_1 \\oplus C_2 = (P_1 \\oplus K) \\oplus (P_2 \\oplus K) = P_1 \\oplus P_2" },
+        ],
+        practice: [
+          {
+            prompt: "A nonce was accidentally reused, so two plaintext bytes were XORed with the same keystream byte K, giving C₁ = 0xD8 and C₂ = 0xC3. You know the first plaintext byte is the ASCII letter 'A' (0x41). Recover the second plaintext byte as an ASCII letter.",
+            hint: "C₁ ⊕ C₂ cancels K and equals P₁ ⊕ P₂. XOR that result with the known P₁ to isolate P₂.",
+            placeholder: "letter",
+            answer: "Z",
+            explanation: "C₁ ⊕ C₂ = 0xD8 ⊕ 0xC3 = 0x1B, which equals P₁ ⊕ P₂ with K cancelled out. XOR that with the known P₁ = 0x41: 0x1B ⊕ 0x41 = 0x5A, which is 'Z' in ASCII — recovered without ever knowing the keystream byte K.",
+          },
         ],
       },
     ],
@@ -921,7 +940,7 @@ export const modules: Module[] = [
     title: "RSA padding: OAEP, PKCS#1 v1.5, and why raw RSA fails",
     summary:
       "Textbook RSA is deterministic and malleable. Padding schemes are what actually make RSA encryption and signing safe to use in the real world.",
-    minutes: 13,
+    minutes: 15,
     category: "Public-key",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -971,6 +990,26 @@ export const modules: Module[] = [
           "OAEP builds its randomization from a fresh random seed, mixed into the message through two rounds of masking with a hash-based mask generation function (MGF1) — each round's output feeds into the next, so recovering any part of the original message requires recovering the entire encoded block intact.",
         ],
         diagram: { type: "oaep" },
+      },
+      {
+        heading: "The padding overhead tax: how much message space it actually costs",
+        body: [
+          "Padding isn't free — it eats directly into how much you can encrypt in a single RSA operation, which is one more reason RSA wraps a symmetric key rather than the data itself. PKCS#1 v1.5 encryption padding has a fixed 11-byte overhead: a leading 0x00, a 0x02 block-type byte, at least 8 bytes of random padding, and a 0x00 separator — so the maximum message length is simply the modulus size in bytes, minus 11.",
+          "Worked example: a 1024-bit RSA key has a 128-byte modulus. Maximum PKCS#1 v1.5 message length: 128 − 11 = 117 bytes. OAEP costs more: its overhead is 2×(hash output length) + 2 bytes, since the construction embeds two hash-sized values into the encoded block. With SHA-256 (32-byte output), that's 2×32 + 2 = 66 bytes of overhead.",
+        ],
+        math: [
+          { expr: "\\text{PKCS\\#1 v1.5 max} = k - 11 \\qquad \\text{OAEP max} = k - 2h - 2" },
+          { expr: "\\text{(k = modulus size in bytes, h = hash output size in bytes)}" },
+        ],
+        practice: [
+          {
+            prompt: "A 2048-bit RSA key (256-byte modulus) uses OAEP with SHA-256. What's the maximum plaintext length, in bytes, that can be encrypted in a single RSA operation?",
+            hint: "OAEP overhead is 2×(hash length) + 2. SHA-256 outputs 32 bytes.",
+            placeholder: "bytes",
+            answer: "190",
+            explanation: "Overhead = 2×32 + 2 = 66 bytes. Maximum plaintext = 256 − 66 = 190 bytes — comfortably enough for a symmetric key (16–32 bytes) but nowhere near enough for a real message, which is exactly why RSA wraps a key rather than encrypting data directly.",
+          },
+        ],
       },
       {
         heading: "The practical takeaway",
@@ -1633,7 +1672,7 @@ export const modules: Module[] = [
     title: "JSON Web Tokens & API authentication",
     summary:
       "JWTs put a signed claim in every request header. They're everywhere in modern APIs — and a few well-known implementation mistakes keep recurring.",
-    minutes: 20,
+    minutes: 22,
     category: "Protocols",
     tags: ["developer", "architect"],
     sections: [
@@ -1676,6 +1715,16 @@ export const modules: Module[] = [
         heading: "What the signature does and doesn't guarantee",
         body: [
           "Verifying a JWT's signature confirms the claims haven't been altered since signing and that they were signed by a holder of the corresponding key — it says nothing about whether the token has since been revoked or is still meant to be valid, which is why expiry (exp) claims and short lifetimes matter. The payload is only encoded, not encrypted: anyone can base64-decode it and read the claims, so secrets never belong there.",
+          "This is worth proving to yourself directly, since it's the single most common JWT misconception: base64url is not encryption, it's just an encoding, and reversing it takes no key at all.",
+        ],
+        practice: [
+          {
+            prompt: "Decode this JWT payload segment (base64url — swap '-' for '+' and '_' for '/' if you're using a standard base64 tool, then decode) and report the numeric value of its \"exp\" claim: eyJzdWIiOiI5MDAxIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzAwMDAwMDAwfQ",
+            hint: "Base64url-decoding gives back the raw JSON payload — no signing key needed, since the payload is only encoded, never encrypted.",
+            placeholder: "exp value",
+            answer: "1700000000",
+            explanation: "Decoded, the segment reads {\"sub\":\"9001\",\"role\":\"admin\",\"exp\":1700000000} — plain, readable JSON. Anyone holding a JWT can read every claim inside it this way, which is exactly why an \"admin\" role claim or any other sensitive field must never be treated as confidential just because it's sitting inside a signed token.",
+          },
         ],
       },
       {
