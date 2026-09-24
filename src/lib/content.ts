@@ -1941,7 +1941,7 @@ export const modules: Module[] = [
     title: "End-to-end encrypted messaging: the Signal Protocol",
     summary:
       "TLS protects data in transit to a server. The Signal Protocol's Double Ratchet goes further — encrypting so not even the server operator can read your messages.",
-    minutes: 13,
+    minutes: 15,
     category: "Protocols",
     tags: ["developer", "architect", "curious", "researcher"],
     sections: [
@@ -1966,6 +1966,15 @@ export const modules: Module[] = [
             { label: "Alice sends the first message", detail: "Encrypted with a key derived from that secret — Bob decrypts it once he comes back online, using the matching private keys." },
           ],
         },
+        practice: [
+          {
+            prompt: "Bob publishes 60 one-time pre-keys to the server before going offline. While he's away, the server hands one out for every new conversation someone initiates with him, at a steady rate of 3 new conversations per day. After exactly how many full days will Bob's supply of one-time pre-keys run out?",
+            hint: "Divide the total supply by the daily consumption rate.",
+            placeholder: "days",
+            answer: "20",
+            explanation: "60 ÷ 3 = 20 days. Once the one-time pre-keys are exhausted, X3DH falls back to using only Bob's signed pre-key (shared across every new conversation instead of one-time), which is why servers monitor this supply and prompt clients to upload fresh batches before it hits zero.",
+          },
+        ],
       },
       {
         heading: "X3DH, as messages crossing the wire",
@@ -2026,7 +2035,7 @@ export const modules: Module[] = [
     title: "Key sizes & security levels: what the numbers mean",
     summary:
       "128-bit AES, 2048-bit RSA, 256-bit ECC — these numbers aren't comparable at face value. Here's how to actually read them.",
-    minutes: 10,
+    minutes: 12,
     category: "Foundations",
     tags: ["executive", "grc", "itops", "architect", "researcher"],
     sections: [
@@ -2064,6 +2073,18 @@ export const modules: Module[] = [
         body: [
           "This whole equivalence table assumes only classical computers. Shor's algorithm collapses RSA and ECC security to essentially nothing at any key size, on a sufficiently large fault-tolerant quantum computer — making the classical size/security relationship irrelevant for those two families. AES and SHA-2 degrade far more gracefully (Grover's algorithm roughly halves the effective security level), which is why the PQC conversation is really about replacing public-key algorithms, not symmetric ones.",
         ],
+        math: [
+          { expr: "\\text{effective post-quantum security} \\approx \\frac{\\text{classical security level}}{2}" },
+        ],
+        practice: [
+          {
+            prompt: "AES-192 provides roughly 192-bit classical security. Applying Grover's algorithm's rough halving, what's its effective security level in bits against a large-scale quantum attacker?",
+            hint: "Grover's algorithm roughly halves the exponent, not the key size — divide the security level itself by 2.",
+            placeholder: "bits",
+            answer: "96",
+            explanation: "192 ÷ 2 = 96 bits — below the 112-bit minimum this catalog treats as acceptable today, which is exactly why NIST's post-quantum guidance recommends AES-256 (halving to a still-comfortable ~128 bits) rather than AES-192 for new long-lived deployments.",
+          },
+        ],
       },
     ],
   },
@@ -2072,7 +2093,7 @@ export const modules: Module[] = [
     title: "Random number generation: the primitive everything else depends on",
     summary:
       "Every key, nonce, and IV in this catalog assumes truly unpredictable randomness. When that assumption breaks, everything built on top breaks with it.",
-    minutes: 10,
+    minutes: 12,
     category: "Foundations",
     tags: ["developer", "architect", "itops", "researcher"],
     sections: [
@@ -2113,6 +2134,16 @@ export const modules: Module[] = [
         heading: "When it goes wrong: real incidents",
         body: [
           "In 2008, a patch to Debian's OpenSSL package accidentally removed nearly all sources of entropy from its key generation, causing it to produce keys from a pool of only about 32,768 possibilities for over a year before discovery — every key generated on an affected system was practically guessable. The 2010 Sony PlayStation 3 incident (referenced in the ECC module) was a related but distinct failure: not weak entropy, but reuse of the exact same \"random\" nonce for every ECDSA signature, which directly exposed the signing private key through simple algebra.",
+          "That \"32,768 possibilities\" figure is worth converting into the unit this catalog uses everywhere else — bits of entropy — to see just how far the Debian bug fell from a real key size.",
+        ],
+        practice: [
+          {
+            prompt: "The Debian OpenSSL bug limited generated keys to a pool of exactly 32,768 possible values. How many bits of entropy does a pool of that size represent?",
+            hint: "Find the power of 2 that equals 32,768.",
+            placeholder: "bits",
+            answer: "15",
+            explanation: "2¹⁵ = 32,768, so the affected keys carried only 15 bits of entropy — a keyspace small enough to exhaust by brute force in seconds on ordinary hardware, versus the 128+ bits a real key is supposed to provide. This is exactly why cryptographic randomness is treated as a foundational assumption in every other module in this catalog: no algorithm's math can compensate for a broken source of randomness underneath it.",
+          },
         ],
       },
     ],
@@ -2325,7 +2356,7 @@ export const personas: Persona[] = [
     tagline: "Risk exposure & investment focus",
     pitch:
       "Your board is asking about the PQC migration. Before you can answer, you need to know what \"classic\" crypto your organisation actually depends on today.",
-    firstWin: { label: "See what's actually at risk", slug: "key-sizes-and-security-levels", minutes: 10 },
+    firstWin: { label: "See what's actually at risk", slug: "key-sizes-and-security-levels", minutes: 12 },
     moduleSlugs: [
       "history-and-purpose-of-cryptography",
       "key-sizes-and-security-levels",
