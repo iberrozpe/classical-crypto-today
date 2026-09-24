@@ -410,7 +410,7 @@ export const modules: Module[] = [
     title: "Symmetric-key cryptography & AES",
     summary:
       "The same key locks and unlocks the data. Fast, simple in concept, and everywhere — from disk encryption to the bulk of every TLS session.",
-    minutes: 38,
+    minutes: 42,
     category: "Symmetric-key",
     tags: ["developer", "architect", "itops", "researcher", "curious"],
     sections: [
@@ -551,6 +551,32 @@ export const modules: Module[] = [
         math: [
           {
             expr: "C_i = \\mathrm{AES}(K, P_i) \\quad \\text{for each block } i, \\text{ independently}",
+          },
+        ],
+      },
+      {
+        heading: "Byte-at-a-time ECB decryption: exploiting a real ECB oracle",
+        body: [
+          "Pattern leakage is bad enough on its own, but ECB has a second, far more damaging failure mode whenever an attacker can get their own chosen bytes prepended to a secret before it's encrypted — a common situation, since many real services append a user-supplied value to session data before encrypting it. Because every block encrypts independently, an attacker can recover the secret one byte at a time, with no key required.",
+          "The trick: pad the attacker-controlled input so exactly one unknown secret byte lands as the last byte of a block, then ask the oracle to encrypt every possible value (all 256 byte options) in that same position and compare each resulting ciphertext block to the real one. The match reveals the unknown byte outright. Shift the padding by one, and the just-recovered byte becomes known context for cracking the next one — repeating until the entire secret is exposed, block by block, byte by byte.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "Byte-at-a-time ECB decryption",
+          steps: [
+            { label: "Align the target byte", detail: "Send N filler bytes so the first unknown secret byte lands as the last byte of a block." },
+            { label: "Build a dictionary", detail: "Separately ask the oracle to encrypt (filler + all 256 possible guess bytes) in that same last position, and record each resulting ciphertext block." },
+            { label: "Match against the real output", detail: "Compare the real oracle's ciphertext block for that position against the 256 dictionary entries — the identical one reveals the true byte." },
+            { label: "Slide the window and repeat", detail: "Shift the filler by one byte so the next unknown byte lands last, using the just-recovered byte as part of the next guess — repeat until the whole secret is decrypted." },
+          ],
+        },
+        practice: [
+          {
+            prompt: "An ECB oracle uses a 16-byte block size, and the secret to recover is 20 bytes long. Recovering each byte costs at most 256 dictionary queries plus 1 query against the real ciphertext. What's the maximum total number of oracle queries needed to recover the entire 20-byte secret?",
+            hint: "Multiply the per-byte query cost by the number of secret bytes.",
+            placeholder: "queries",
+            answer: "5140",
+            explanation: "(256 + 1) × 20 = 5,140 queries in the worst case — no key-breaking, no cryptanalysis, just repeatedly asking a service to encrypt attacker-chosen data. This is exactly why any endpoint that encrypts user input concatenated with a secret is dangerous under ECB, no matter how strong the underlying cipher is.",
           },
         ],
       },
@@ -1090,7 +1116,7 @@ export const modules: Module[] = [
     title: "Elliptic Curve Cryptography (ECC / ECDSA)",
     summary:
       "The same public-key guarantees as RSA, with dramatically smaller keys — because the underlying hard problem is different math entirely.",
-    minutes: 40,
+    minutes: 50,
     category: "Public-key",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -1123,6 +1149,26 @@ export const modules: Module[] = [
         heading: "Scalar multiplication: how kG is actually computed",
         body: [
           "Computing Q = kG for a 256-bit private key k doesn't mean adding G to itself k times — that would be astronomically slow. Instead, implementations use double-and-add, the same square-and-multiply idea behind fast RSA exponentiation: scan the bits of k, doubling a running point at every step and adding G whenever that bit is 1. A 256-bit scalar multiplication takes on the order of 256 doublings and up to 256 additions — fast enough to run thousands of times per second, while still being, as far as anyone knows, computationally impossible to reverse.",
+        ],
+      },
+      {
+        heading: "Montgomery's ladder: making scalar multiplication constant-time",
+        body: [
+          "Double-and-add has a subtle problem that has nothing to do with the underlying math: its running time and operation pattern depend directly on the bits of the secret scalar k. A doubling happens every step, but an addition only happens on a 1-bit — so an attacker who can measure timing or power consumption precisely enough (the side-channel attacks covered elsewhere in this catalog) can potentially read k's bits straight off the execution pattern, one bit-dependent branch at a time.",
+          "Montgomery's ladder fixes this by restructuring the algorithm so every single step, regardless of whether the current bit is 0 or 1, performs exactly one doubling and one addition — just applied to different running values depending on the bit. The total work per step never changes, so there's no timing signal tied to the scalar's bit pattern left to leak. This is precisely the algorithm underneath X25519, the Curve25519-based key exchange mentioned earlier in this module, and it's a big part of why Curve25519 implementations are considered easier to write safely than older curves.",
+        ],
+        math: [
+          { expr: "\\text{double-and-add: 1 doubling every bit, 1 addition only on set bits}" },
+          { expr: "\\text{Montgomery ladder: 1 doubling AND 1 addition every bit, unconditionally}" },
+        ],
+        practice: [
+          {
+            prompt: "For a 256-bit scalar with exactly 100 of its bits set to 1: double-and-add performs 1 doubling per bit plus 1 addition per set bit. Montgomery's ladder performs 1 doubling AND 1 addition per bit, every time. How many more total point operations does the ladder perform than double-and-add?",
+            hint: "Double-and-add: 256 doublings + 100 additions. Ladder: 256 doublings + 256 additions. Find the difference.",
+            placeholder: "extra operations",
+            answer: "156",
+            explanation: "Double-and-add: 256 + 100 = 356 operations. Ladder: 256 + 256 = 512 operations. 512 − 356 = 156 extra operations — the cost of constant-time execution. That overhead buys immunity to an entire class of timing attacks, which is a trade real implementations consider well worth making for anything touching a secret key.",
+          },
         ],
       },
       {
@@ -1169,6 +1215,25 @@ export const modules: Module[] = [
         ],
         math: [
           { expr: "|p + 1 - \\#E(\\mathbb{F}_p)| \\leq 2\\sqrt{p} \\quad \\text{(Hasse's theorem)}" },
+        ],
+      },
+      {
+        heading: "Pohlig-Hellman: when a smooth curve order breaks everything",
+        body: [
+          "\"Small factors in the order\" isn't just a small-subgroup annoyance — if the order factors completely into small primes (a \"smooth\" order), the Pohlig-Hellman algorithm breaks the ECDLP entirely, no matter how large the curve's field is. The idea directly reuses two tools already covered in this catalog: solve the discrete log separately inside each small prime-order subgroup (fast, since each one is individually tiny — brute force or baby-step giant-step handles it), then stitch those partial results back together into the full private key using the Chinese Remainder Theorem from the math foundations module.",
+          "This is exactly why curve order matters as much as field size: a 256-bit field with a smooth, small-factor order is not a 256-bit-secure curve at all — its real security is bounded by the largest prime factor of the order, not by the field's bit length. Production curves are chosen with prime (or near-prime) order specifically to make Pohlig-Hellman's divide-and-conquer approach have nothing to divide.",
+        ],
+        math: [
+          { expr: "n = p_1 \\times p_2 \\times \\cdots \\times p_k \\;\\Rightarrow\\; \\text{solve ECDLP mod each } p_i, \\text{ combine via CRT}" },
+        ],
+        practice: [
+          {
+            prompt: "A poorly chosen curve has order n = 223,092,870 — the product of the first nine primes (2×3×5×7×11×13×17×19×23). Brute-forcing the discrete log directly costs up to n steps. Pohlig-Hellman's dominant cost is solving the ECDLP in the largest prime-order subgroup, 23. Roughly how many times faster is Pohlig-Hellman, expressed as n ÷ 23?",
+            hint: "Divide n by 23.",
+            placeholder: "times faster",
+            answer: "9699690",
+            explanation: "223,092,870 ÷ 23 = 9,699,690 — Pohlig-Hellman is faster by roughly that factor, because the hardest remaining piece is only as difficult as the largest prime factor of the order, not the order itself. This is the precise mathematical reason curve-order smoothness is checked as carefully as field size when a curve is selected for production use.",
+          },
         ],
       },
       {
@@ -1238,6 +1303,25 @@ export const modules: Module[] = [
         heading: "How a leaked nonce leaks the entire private key",
         body: [
           "The ECDSA signing formula involves the nonce k algebraically alongside the private key d. If an attacker ever learns k for even one signature — through a weak RNG, a side-channel leak, or (as in the PS3 case) the same k reused across two different signatures — they can rearrange the signing equation to solve directly for d. This is a one-shot, deterministic break, not a probabilistic weakening: a single exposed nonce is equivalent to publishing the private key outright.",
+        ],
+      },
+      {
+        heading: "Curveball: forging trust without ever learning the private key",
+        body: [
+          "Not every real-world ECDSA break needs a leaked nonce. CVE-2020-0601 — nicknamed \"Curveball\", disclosed by the NSA in January 2020 — exploited a validation gap in Windows' CryptoAPI: it checked whether a certificate's public key point matched a trusted root's public key, but never checked that the certificate's explicit curve parameters (specifically, the base point G) matched the standard, fixed generator for that named curve.",
+          "That gap is enough to forge a trusted certificate without factoring anything or learning any real private key. An attacker picks their own secret integer k, then computes a new base point G′ = k⁻¹ · Q, where Q is the real root CA's already-trusted public key. Now k · G′ = k · (k⁻¹ · Q) = Q exactly — so the point Q, which Windows already trusts, is also a valid \"public key\" under the attacker's own private key k and their substituted generator G′. The attacker can sign anything with k, present G′ as the certificate's domain parameters, and a vulnerable verifier that only checks \"does the public key point equal Q\" accepts it — never noticing the generator itself was swapped out from under it.",
+        ],
+        math: [
+          { expr: "G' = k^{-1} \\cdot Q \\;\\Rightarrow\\; k \\cdot G' = Q \\quad \\text{(the trusted public key, forged without knowing the real private key)}" },
+        ],
+        practice: [
+          {
+            prompt: "On a curve with point order n = 19, an attacker picks k = 7 as their own private key and needs G′ = k⁻¹ · Q. What is k⁻¹ mod 19?",
+            hint: "Find the integer that, multiplied by 7, gives a result ≡ 1 (mod 19) — the extended Euclidean algorithm from the math foundations module finds this directly.",
+            placeholder: "k⁻¹",
+            answer: "11",
+            explanation: "7 × 11 = 77 = 4×19 + 1, so 7⁻¹ ≡ 11 (mod 19). The attacker uses this value to compute G′ = 11 · Q, publishes G′ as their certificate's \"generator,\" and signs with their own known private key k = 7 — producing signatures that verify successfully against the real, trusted public key Q, entirely without ever learning the CA's actual private key.",
+          },
         ],
       },
       {
