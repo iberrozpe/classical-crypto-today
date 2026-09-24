@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "classical-crypto-today",
-      "runtimeExecutable": "/Users/ignacioberrozpe/.local/tools/node-v22.11.0-darwin-arm64/bin/npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/bin/zsh",
+      "runtimeArgs": ["-c", "export PATH=\"$HOME/.local/tools/node-v22.11.0-darwin-arm64/bin:$PATH\"; exec npm run dev"],
       "port": 3000
     }
   ]

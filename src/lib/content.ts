@@ -70,7 +70,7 @@ export const modules: Module[] = [
     title: "The history and purpose of cryptography",
     summary:
       "Before the math: what cryptography is actually trying to do, and the 2,500-year arms race between codemakers and codebreakers that got us here.",
-    minutes: 20,
+    minutes: 22,
     category: "Foundations",
     tags: ["executive", "grc", "developer", "architect", "researcher", "curious"],
     sections: [
@@ -117,6 +117,15 @@ export const modules: Module[] = [
           "The earliest ciphers didn't hide that a message existed — they hid what it said, using methods simple enough to execute by hand in the field. The scytale rearranged letters (transposition); the Caesar cipher replaced each letter with another (substitution). Both assumed the method itself, not just a key, needed to stay secret — an assumption that held only as long as nobody studied the method carefully.",
         ],
         diagram: { type: "cipher-wheel" },
+        practice: [
+          {
+            prompt: "Using a Caesar shift of 7 (each letter moves 7 positions forward, wrapping Z back to A), encrypt the word ATTACKATDAWN.",
+            hint: "A→H, T→A (wraps around), and so on — shift every letter forward by 7 positions in the alphabet.",
+            placeholder: "ciphertext",
+            answer: "HAAHJRHAKHDU",
+            explanation: "Shifting every letter of ATTACKATDAWN forward by 7 gives HAAHJRHAKHDU. Decrypting just reverses the shift — exactly the weakness Al-Kindi's frequency analysis exploited, since the shift amount is the cipher's only secret.",
+          },
+        ],
       },
       {
         heading: "The first cryptanalysis: Al-Kindi and frequency analysis",
@@ -1279,7 +1288,7 @@ export const modules: Module[] = [
     title: "Hash functions & digital signatures",
     summary:
       "One-way fingerprints for data, and the mechanism that proves a message is authentic and untampered — without encrypting anything.",
-    minutes: 26,
+    minutes: 29,
     category: "Foundations",
     tags: ["developer", "architect", "grc", "researcher"],
     sections: [
@@ -1334,6 +1343,25 @@ export const modules: Module[] = [
           steps: ["IV", "M₁ → H₁", "M₂ → H₂", "M₃ → digest"],
           caption: "Each box is one message block feeding the compression function alongside the previous chaining value — nothing else, which is the whole source of the length-extension weakness above.",
         },
+      },
+      {
+        heading: "SHA-256's padding, computed exactly",
+        body: [
+          "The length-extension attack above depends on one precise mechanical detail: how SHA-256 pads a message before splitting it into 64-byte blocks. The rule is: append a single 0x80 byte, then enough zero bytes to leave exactly 8 bytes remaining in the current or next 64-byte block, then those final 8 bytes encode the original message's bit-length. The whole padded message always ends up a multiple of 64 bytes.",
+          "Worked example: a 13-byte message. After the 0x80 byte, the running total is 14 bytes. To reach a multiple of 64 with 8 bytes left over for the length field, we need the total (before the length field) to hit 56 — so 56 − 14 = 42 zero bytes are added, followed by the 8-byte length. Total: 13 + 1 + 42 + 8 = 64 bytes, exactly one block.",
+        ],
+        math: [
+          { expr: "\\text{zero bytes} = \\big(56 - (L + 1)\\big) \\bmod 64, \\quad \\text{padded length} = L + 1 + \\text{zero bytes} + 8" },
+        ],
+        practice: [
+          {
+            prompt: "A message is 60 bytes long. Using SHA-256's padding rule, how many zero-padding bytes are needed (not counting the 0x80 byte or the final 8-byte length field)?",
+            hint: "After the 0x80 byte, the running length is 61. Find how many zero bytes bring the total (before the 8-byte length field) up to the next multiple of 64, minus 8.",
+            placeholder: "zero bytes",
+            answer: "59",
+            explanation: "After 60 message bytes + the 0x80 byte, the running total is 61. The next point that leaves exactly 8 bytes free in a 64-byte block is 120 (= 64×2 − 8), so 120 − 61 = 59 zero bytes are needed. Total padded length: 60 + 1 + 59 + 8 = 128 bytes — two full blocks, since the original message plus its 0x80 byte didn't fit the length field into the first block alone.",
+          },
+        ],
       },
       {
         heading: "Why HMAC isn't just H(key ‖ message)",
@@ -1414,7 +1442,7 @@ export const modules: Module[] = [
     title: "Password hashing & key derivation: PBKDF2, bcrypt, scrypt, Argon2",
     summary:
       "A cryptographic hash is too fast for passwords. KDFs deliberately slow things down — and not all of them do it the same way.",
-    minutes: 11,
+    minutes: 14,
     category: "Foundations",
     tags: ["developer", "architect", "grc", "researcher"],
     sections: [
@@ -1434,6 +1462,25 @@ export const modules: Module[] = [
           {
             expr: "\\mathrm{DK} = \\mathrm{PBKDF2}(\\mathrm{password}, \\mathrm{salt}, c, \\mathrm{dkLen})",
             caption: "c is the iteration count — the tunable \"cost\" knob; dkLen is the derived key's length.",
+          },
+        ],
+      },
+      {
+        heading: "What the iteration count actually costs an attacker",
+        body: [
+          "The iteration count isn't an abstract knob — it directly divides an attacker's guessing rate, which makes it possible to reason about a specific deployment in concrete numbers. If a stolen password database used bare, unstretched SHA-256 and an attacker's GPU can compute 10 billion SHA-256 hashes per second, that's also their password-guessing rate: 10,000,000,000 guesses/sec.",
+          "Worked example: the same GPU against PBKDF2 with 100,000 iterations. Each guess now costs 100,000 hash operations instead of one, so the attacker's guessing rate drops to 10,000,000,000 ÷ 100,000 = 100,000 guesses per second — a 100,000-fold slowdown, for the defender's cost of one extra hashing step per login.",
+        ],
+        math: [
+          { expr: "\\text{guesses/sec} = \\frac{\\text{hashes/sec}}{\\text{iteration count}}" },
+        ],
+        practice: [
+          {
+            prompt: "The same 10-billion-hash/sec GPU attacks a database hashed with PBKDF2 at 500,000 iterations. How many password guesses per second can the attacker make?",
+            hint: "Divide the raw hash rate by the iteration count.",
+            placeholder: "guesses/sec",
+            answer: "20000",
+            explanation: "10,000,000,000 ÷ 500,000 = 20,000 guesses per second. Note this is only about raw guessing speed — it says nothing about how much memory the computation needs, which is exactly the gap that memory-hard KDFs like scrypt and Argon2 (below) are designed to close, since GPUs are cheap at raw hashing but comparatively memory-starved.",
           },
         ],
       },
@@ -2275,7 +2322,7 @@ export const personas: Persona[] = [
     label: "Researcher / Academic",
     tagline: "Comprehensive, no filtering",
     pitch: "Open the full catalog. Every module, in order, with no persona filtering.",
-    firstWin: { label: "Start at the very beginning", slug: "history-and-purpose-of-cryptography", minutes: 20 },
+    firstWin: { label: "Start at the very beginning", slug: "history-and-purpose-of-cryptography", minutes: 22 },
     moduleSlugs: modules.map((m) => m.slug),
   },
   {
