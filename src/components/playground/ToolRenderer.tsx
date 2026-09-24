@@ -7,6 +7,9 @@ import RsaOaepTool from "./RsaOaepTool";
 import EcdsaTool from "./EcdsaTool";
 import EcdhTool from "./EcdhTool";
 import JwtTool from "./JwtTool";
+import Pbkdf2Tool from "./Pbkdf2Tool";
+import CertChainTool from "./CertChainTool";
+import X3dhTool from "./X3dhTool";
 
 const toolComponents: Record<string, React.ComponentType> = {
   "aes-gcm": AesGcmTool,
@@ -16,6 +19,9 @@ const toolComponents: Record<string, React.ComponentType> = {
   ecdsa: EcdsaTool,
   ecdh: EcdhTool,
   jwt: JwtTool,
+  pbkdf2: Pbkdf2Tool,
+  "cert-chain": CertChainTool,
+  x3dh: X3dhTool,
 };
 
 export default function ToolRenderer({ slug }: { slug: string }) {

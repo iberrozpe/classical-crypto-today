@@ -339,6 +339,119 @@ export const playgroundTools: PlaygroundTool[] = [
       },
     ],
   },
+  {
+    slug: "pbkdf2",
+    title: "PBKDF2 password hashing",
+    summary:
+      "Derive a real key from a password with a tunable iteration count, and feel the cost difference between 1,000 and 600,000 iterations yourself.",
+    relatedModule: "key-derivation-functions",
+    category: "Foundations",
+    howItWorks: [
+      {
+        heading: "What the iteration count actually does",
+        body: [
+          "PBKDF2 applies HMAC-SHA256 to the password and salt, then feeds that output back in as input for another round of HMAC, repeated for however many iterations you choose. Each round is cheap on its own; multiplied by hundreds of thousands of rounds, it becomes deliberately, measurably slow.",
+        ],
+        math: [
+          { expr: "\\mathrm{DK} = \\mathrm{PBKDF2}(\\text{password}, \\text{salt}, c, \\text{dkLen})", caption: "c is the iteration count you picked above." },
+        ],
+      },
+      {
+        heading: "Why the timer matters",
+        body: [
+          "The elapsed-time readout after you click \"Derive key\" isn't a UI flourish — it's the entire point made concrete. An attacker checking a stolen password database against a wordlist pays that exact same per-guess cost, for every single guess. At 1,000 iterations that cost is negligible; at 600,000 it starts to meaningfully slow down large-scale guessing, at the price of also slowing down your own legitimate login checks.",
+        ],
+      },
+      {
+        heading: "Salt: public, but not pointless",
+        body: [
+          "The salt travels in the clear right alongside the derived key — it isn't a secret. Its job is narrower: it guarantees two users with the same password get completely different derived keys, which defeats precomputed rainbow-table attacks that only work when the same input always produces the same output.",
+        ],
+      },
+      {
+        heading: "Why this tool doesn't offer Argon2",
+        body: [
+          "The Web Crypto API implements PBKDF2 natively in every browser; it doesn't implement Argon2, bcrypt, or scrypt at all — those would require a third-party WebAssembly library, which this playground deliberately avoids so that every tool here runs on nothing but your browser's own built-in, audited cryptography. The key derivation functions module covers all four algorithms and explains why Argon2 is the current recommendation for new systems.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "cert-chain",
+    title: "Certificate chain builder",
+    summary:
+      "Build a real three-link chain of trust — root, intermediate, and leaf — each signed with real ECDSA, then tamper with the leaf and watch verification catch it.",
+    relatedModule: "digital-certificates-x509",
+    category: "Public-key",
+    howItWorks: [
+      {
+        heading: "What this tool simplifies, and what's real",
+        body: [
+          "A real X.509 certificate is a binary, ASN.1 DER-encoded structure with dozens of possible fields and extensions — producing one requires a dedicated encoding library, not just the Web Crypto API. This tool signs a simplified JSON structure ({subject, issuer, publicKey}) instead, so it can demonstrate the actual chain-of-trust mechanism using nothing but real, in-browser ECDSA. Every cryptographic operation here — key generation, signing, verification — is genuine; only the wire format is simplified.",
+        ],
+      },
+      {
+        heading: "Issuing a certificate: sign the child's identity with the parent's key",
+        body: [
+          "\"Generate\" builds the chain bottom-up in terms of trust, top-down in terms of signing: the root signs its own subject and public key (a self-signed root, exactly like a real root CA), then signs the intermediate's; the intermediate, in turn, signs the leaf's.",
+        ],
+        math: [{ expr: "\\text{signature} = \\mathrm{ECDSA\\_sign}(\\text{issuer's private key},\\ \\{\\text{subject}, \\text{issuer}, \\text{publicKey}\\})" }],
+        diagram: {
+          type: "sequence",
+          title: "Verifying the chain, leaf to root",
+          steps: [
+            { label: "Verify the leaf", detail: "Check the leaf's signature using the intermediate's public key." },
+            { label: "Verify the intermediate", detail: "Check the intermediate's signature using the root's public key." },
+            { label: "Verify the root", detail: "Check the root's self-signature using its own public key." },
+            { label: "Trust, if every link checks out", detail: "One broken link anywhere in the chain is enough to reject the whole thing." },
+          ],
+        },
+      },
+      {
+        heading: "Why tampering the subject breaks verification",
+        body: [
+          "The signature is computed over the exact bytes of {subject, issuer, publicKey} at issuance time. \"Tamper with the leaf's subject\" edits that field afterward without re-signing — so verification recomputes what the signature should cover, gets a different result than what was actually signed, and rejects it. This is the identical hash-then-sign tamper-evidence property covered in the hashing and signatures module, applied to a certificate instead of a message.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "x3dh",
+    title: "X3DH: key agreement while offline",
+    summary:
+      "Simulate Bob publishing a key bundle and going offline, then Alice computing a shared secret from it anyway — the mechanism behind Signal's first-message problem.",
+    relatedModule: "secure-messaging-signal-protocol",
+    category: "Protocols",
+    howItWorks: [
+      {
+        heading: "Why one Diffie-Hellman isn't enough here",
+        body: [
+          "The ECDH tool's exchange needs both sides online to swap public keys in real time. X3DH's trick is precomputing several DH values from keys Bob published in advance, so Alice — the sender — can complete every DH computation herself, without Bob's participation at that moment at all.",
+        ],
+      },
+      {
+        heading: "Four DH computations, folded into one secret",
+        body: [
+          "\"Alice fetches the bundle\" runs four separate ECDH computations, mixing her own identity and ephemeral keys with Bob's published identity key, signed prekey, and one-time prekey.",
+        ],
+        math: [
+          { expr: "DH_1 = IK_A \\times SPK_B \\qquad DH_2 = EK_A \\times IK_B \\qquad DH_3 = EK_A \\times SPK_B \\qquad DH_4 = EK_A \\times OPK_B" },
+        ],
+      },
+      {
+        heading: "Combining them: a simplified stand-in for HKDF",
+        body: [
+          "This tool concatenates the four raw DH outputs and hashes the result with SHA-256 to produce a single shared secret. Real X3DH runs that same concatenation through HKDF (covered in the key derivation functions module) instead of a plain hash, to get a properly uniform, arbitrary-length key rather than exactly one SHA-256 digest — a simplification made here for clarity, not a difference in the core idea.",
+        ],
+      },
+      {
+        heading: "Why Bob can compute the identical secret, later",
+        body: [
+          "When Bob comes back online, he runs the mirrored computation — his private keys against Alice's public keys, in the same four combinations — and lands on the same four DH values Alice did, because ECDH is commutative: a·(bG) and b·(aG) are the same point, regardless of which side's private key did the multiplying. That's the exact property the ECDH tool demonstrates directly.",
+        ],
+      },
+    ],
+  },
 ];
 
 export function getPlaygroundTool(slug: string): PlaygroundTool | undefined {
