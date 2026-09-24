@@ -401,7 +401,7 @@ export const modules: Module[] = [
     title: "Symmetric-key cryptography & AES",
     summary:
       "The same key locks and unlocks the data. Fast, simple in concept, and everywhere — from disk encryption to the bulk of every TLS session.",
-    minutes: 26,
+    minutes: 38,
     category: "Symmetric-key",
     tags: ["developer", "architect", "itops", "researcher", "curious"],
     sections: [
@@ -410,6 +410,41 @@ export const modules: Module[] = [
         body: [
           "Symmetric-key cryptography uses a single secret key for both encryption and decryption. If Alice and Bob share a key, Alice can encrypt a message with it and Bob can decrypt it with the same key. The security of the whole scheme rests entirely on that key staying secret.",
           "This is the oldest form of cryptography in continuous use, and it remains the workhorse of modern systems because it's fast — often 100-1000x faster than public-key operations on the same data.",
+        ],
+      },
+      {
+        heading: "XOR: the operation underneath almost everything here",
+        body: [
+          "Exclusive-or (XOR, written ⊕) compares two bits and returns 1 if they differ, 0 if they match. It shows up constantly in symmetric cryptography — in AddRoundKey, in every stream cipher's keystream combination, in CBC chaining — because of three properties that make it uniquely useful for encryption: it's its own inverse (A ⊕ A = 0, and A ⊕ B ⊕ B = A), it's commutative and associative (order doesn't matter), and XORing with 0 changes nothing.",
+          "That self-inverse property is the whole mechanism behind a stream cipher: encrypt with C = P ⊕ K, and decrypting is the identical operation, C ⊕ K = P ⊕ K ⊕ K = P ⊕ 0 = P. No separate decryption algorithm is needed at all — XOR undoes itself.",
+        ],
+        math: [
+          { expr: "A \\oplus A = 0 \\qquad A \\oplus 0 = A \\qquad A \\oplus B = B \\oplus A" },
+        ],
+        practice: [
+          {
+            prompt: "Using XOR's self-inverse property: if C = P ⊕ K, and C = 0x5a, K = 0x1b, what is P? Give your answer as a two-digit hex byte (e.g. 4f).",
+            hint: "P = C ⊕ K — XOR is its own inverse, so decrypting is the same operation as encrypting.",
+            placeholder: "hex byte",
+            answer: "41",
+            explanation: "0x5a ⊕ 0x1b = 0x41 (binary: 01011010 ⊕ 00011011 = 01000001). Encryption and decryption are the exact same XOR operation, which is why stream ciphers never need a separate decryption routine.",
+          },
+        ],
+      },
+      {
+        heading: "Breaking single-byte XOR \"encryption\"",
+        body: [
+          "Repeating a single byte as a \"key\" and XORing it across an entire message is sometimes mistaken for encryption — it isn't, and breaking it demonstrates exactly why key length and randomness matter. Since there are only 256 possible single-byte keys, an attacker simply tries all of them and picks whichever result looks like readable text.",
+          "Worked example: the hex ciphertext 01101b12160d0b1104170c was produced by XORing an English message with a single repeated byte. Trying key 0x42 against every byte gives CRYPTOISFUN — recognizably English, unlike the gibberish every other one of the 255 wrong keys produces. That contrast (one output looks like language, everything else looks random) is what makes the brute force self-checking, with no need to know the key in advance.",
+        ],
+        practice: [
+          {
+            prompt: "The hex ciphertext 5e5c57465f52415e52475b was produced by XORing an English message with a single repeated byte key. Brute-force all 256 possible keys and recover the plaintext.",
+            hint: "For each candidate key 0x00–0xff, XOR it against every ciphertext byte and check whether the result is readable ASCII text.",
+            placeholder: "plaintext",
+            answer: "MODULARMATH",
+            explanation: "The key is 0x13. XORing it against every ciphertext byte recovers MODULARMATH — the only one of 256 possible keys that produces readable text, which is exactly how this attack self-verifies without knowing the key beforehand.",
+          },
         ],
       },
       {
@@ -529,6 +564,25 @@ export const modules: Module[] = [
             { label: "Block 3 and onward", detail: "Each block is XORed with the ciphertext immediately before it — one long dependency chain." },
           ],
         },
+      },
+      {
+        heading: "CBC bit-flipping: tampering without the key",
+        body: [
+          "CBC's chaining formula has a sharp edge: decryption computes Pᵢ = AES_decrypt(Cᵢ) ⊕ Cᵢ₋₁. An attacker who flips a byte in Cᵢ₋₁ never touches AES_decrypt(Cᵢ) at all — but the XOR at the end means that same byte position in the decrypted Pᵢ flips by exactly the same amount. No key needed: change a ciphertext byte, and the corresponding plaintext byte changes by that identical delta, one block later. (The cost: block Pᵢ₋₁, which that ciphertext byte actually belongs to, decrypts to garbage — bit-flipping trades one block's integrity for control over the next.)",
+          "Because of XOR's self-inverse property, the attacker doesn't even need to know the intermediate AES_decrypt(Cᵢ) value to pull this off. If the original plaintext byte was X and the target byte is Y, XORing X ⊕ Y into the corresponding ciphertext byte is enough — that delta passes straight through the final XOR unchanged.",
+        ],
+        math: [
+          { expr: "P_i[\\text{pos}] \\mathrel{\\oplus}= \\Delta \\quad \\text{whenever} \\quad C_{i-1}[\\text{pos}] \\mathrel{\\oplus}= \\Delta, \\qquad \\Delta = X \\oplus Y" },
+        ],
+        practice: [
+          {
+            prompt: "A CBC-encrypted block's plaintext byte at some position originally decrypts to 'A' (0x41). Without knowing the key, what hex value should you XOR into the corresponding byte of the previous ciphertext block to flip that decrypted byte to 'Z' (0x5a)?",
+            hint: "The delta to XOR in is simply the original byte XORed with the target byte — X ⊕ Y.",
+            placeholder: "hex delta",
+            answer: "1b",
+            explanation: "0x41 ⊕ 0x5a = 0x1b. XORing 0x1b into that ciphertext byte flips the corresponding decrypted plaintext byte from 'A' to 'Z', at the cost of scrambling the rest of the block that ciphertext byte belongs to.",
+          },
+        ],
       },
       {
         heading: "CTR: turning a block cipher into a stream cipher",
@@ -651,7 +705,7 @@ export const modules: Module[] = [
     title: "RSA & public-key cryptography",
     summary:
       "Two mathematically linked keys — one public, one private — solve the problem symmetric crypto can't: how do you share a secret with someone you've never met?",
-    minutes: 30,
+    minutes: 46,
     category: "Public-key",
     tags: ["developer", "architect", "executive", "researcher", "curious"],
     sections: [
@@ -797,6 +851,60 @@ export const modules: Module[] = [
           ],
         },
       },
+      {
+        heading: "The cube-root attack: RSA with no padding and a small exponent",
+        body: [
+          "If a message is encrypted with e = 3 and never padded, and the message M is small enough that M³ is actually less than the modulus n, something breaks completely: the modular reduction never triggers. C = M³ mod n is just C = M³, an ordinary integer cube — and anyone can recover M by taking an integer cube root, without touching the private key or factoring anything.",
+          "Worked example: M = 123, e = 3, and n large enough that M³ < n. Then C = 123³ = 1,860,867. Taking the integer cube root of 1,860,867 gives back 123 directly. This is exactly why the padding module's warning about raw RSA matters in practice, not just in theory — OAEP defeats this attack by padding M out to the full size of n before encrypting, so M³ is always far larger than n and the modular wraparound always happens.",
+        ],
+        math: [
+          { expr: "C = M^{3} \\ \\text{(no reduction, since } M^3 < n\\text{)} \\quad \\Longrightarrow \\quad M = \\sqrt[3]{C}" },
+        ],
+        practice: [
+          {
+            prompt: "A message M was encrypted with e = 3 and no padding, small enough that no modular reduction occurred. The ciphertext is C = 10218313. Recover M.",
+            hint: "Since C = M³ exactly (no modulus involved), find the integer cube root of C.",
+            placeholder: "M",
+            answer: "217",
+            explanation: "217³ = 10,218,313 exactly, so M = 217. With real padding (OAEP), M would first be expanded to the size of n, making this shortcut impossible.",
+          },
+        ],
+      },
+      {
+        heading: "Fermat's factorization: when p and q are too close together",
+        body: [
+          "RSA's security assumes p and q are independently random primes of similar bit length — but if a flawed key generator picks them too close to each other, n = p×q can be factored almost instantly, no GNFS required. The trick: if p and q are close, then n = a² − b² for a = (p+q)/2 and b = (p−q)/2, and a ≈ √n. Starting from a = ⌈√n⌉ and incrementing, check at each step whether a² − n is a perfect square — the first one that is gives b, and then p = a−b, q = a+b.",
+          "Worked example: p = 10007, q = 10009 (deliberately close). n = p×q = 100,160,063. ⌈√n⌉ = 10008. Compute 10008² − n = 100,160,064 − 100,160,063 = 1, which is 1² — a perfect square on the very first try. So b = 1, giving p = 10008−1 = 10007 and q = 10008+1 = 10009, recovered in a single step instead of factoring n the hard way.",
+        ],
+        math: [
+          { expr: "n = a^2 - b^2 = (a-b)(a+b), \\quad a = \\lceil \\sqrt{n} \\rceil,\\ b = \\sqrt{a^2 - n}" },
+        ],
+        practice: [
+          {
+            prompt: "n = 10002200057 was generated from two primes chosen too close together. Using Fermat's method (a = ⌈√n⌉, checking a²−n for a perfect square), find the smaller prime factor.",
+            hint: "⌈√n⌉ = 100011. Compute 100011² − n and check whether it's a perfect square.",
+            placeholder: "smaller prime factor",
+            answer: "100003",
+            explanation: "100011² − n = 64 = 8², so b = 8. That gives p = 100011−8 = 100003 and q = 100011+8 = 100019 — both prime, recovered in one step.",
+          },
+        ],
+      },
+      {
+        heading: "Wiener's attack: why the private exponent can't be small",
+        body: [
+          "Just as e is usually chosen small for fast encryption, it might seem tempting to choose a small d for fast decryption. Wiener's attack shows exactly why that's disastrous: when d is smaller than roughly n^0.25, the fraction e/n turns out to be a very close rational approximation of a related fraction involving d — close enough that the continued-fraction expansion of e/n reveals d directly, with no factoring and no brute force at all.",
+          "This is the mirror image of the e = 65537 story from earlier in this module: e gets to be small because encryption speed only matters to the sender, but d must always be large, because decryption speed advantages for the key-holder aren't worth handing an attacker a shortcut. Real implementations enforce a minimum size for d specifically to stay outside Wiener's reach.",
+        ],
+        practice: [
+          {
+            prompt: "n is a 2048-bit RSA modulus. Wiener's attack succeeds once d drops below roughly n^0.25. About how many bits is that threshold?",
+            hint: "n^0.25 means a quarter of n's bit length.",
+            placeholder: "bits",
+            answer: "512",
+            explanation: "n^0.25 corresponds to roughly a quarter of n's bit length: 2048 ÷ 4 = 512 bits. A 2048-bit RSA key needs d meaningfully larger than a 512-bit number to stay safe from Wiener's attack — which is why d is never deliberately shrunk for speed.",
+          },
+        ],
+      },
     ],
   },
   {
@@ -868,7 +976,7 @@ export const modules: Module[] = [
     title: "Elliptic Curve Cryptography (ECC / ECDSA)",
     summary:
       "The same public-key guarantees as RSA, with dramatically smaller keys — because the underlying hard problem is different math entirely.",
-    minutes: 28,
+    minutes: 40,
     category: "Public-key",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -915,6 +1023,52 @@ export const modules: Module[] = [
           },
           {
             expr: "2G = (6,3) \\qquad 3G = (10,6)",
+          },
+        ],
+      },
+      {
+        heading: "Point addition, worked with the actual formula",
+        body: [
+          "The chord-and-tangent picture is the geometry; here's the algebra a computer actually evaluates. To add two distinct points P = (x₁, y₁) and Q = (x₂, y₂), compute the slope m = (y₂ − y₁) / (x₂ − x₁) — using the modular inverse for that division — then x₃ = m² − x₁ − x₂ and y₃ = m(x₁ − x₃) − y₁, all reduced mod p. Doubling a point uses the tangent slope instead: m = (3x₁² + a) / (2y₁).",
+          "Worked example: on the same curve, compute 2G + 3G using 2G = (6, 3) and 3G = (10, 6). The slope is m = (6−3)/(10−6) = 3/4 mod 17. The modular inverse of 4 mod 17 is 13 (since 4×13 = 52 ≡ 1), so m = 3×13 mod 17 = 39 mod 17 = 5. Then x₃ = 5² − 6 − 10 = 9 mod 17, and y₃ = 5×(6−9) − 3 = −18 mod 17 = 16. So 2G + 3G = (9, 16) — which is exactly 5G, confirming the arithmetic is consistent.",
+        ],
+        math: [
+          {
+            expr: "m = \\frac{y_2 - y_1}{x_2 - x_1} \\pmod{p} \\qquad x_3 = m^2 - x_1 - x_2 \\qquad y_3 = m(x_1 - x_3) - y_1",
+          },
+        ],
+        practice: [
+          {
+            prompt: "On the curve y² = x³ + 2x + 2 (mod 17), 3G = (10, 6) and 4G = (3, 1). Using the point-addition formula, compute 3G + 4G (which should equal 7G). Give the result as x,y.",
+            hint: "Slope m = (y₂−y₁)/(x₂−x₁) mod 17, using the modular inverse for the division, then x₃ = m²−x₁−x₂ and y₃ = m(x₁−x₃)−y₁.",
+            placeholder: "x,y",
+            answer: "0,6",
+            explanation: "With P=3G=(10,6) and Q=4G=(3,1): y₂−y₁ = 1−6 = −5 ≡ 12 (mod 17), and x₂−x₁ = 3−10 = −7 ≡ 10 (mod 17). The modular inverse of 10 mod 17 is 12 (10×12 = 120 ≡ 1), so m = 12×12 mod 17 = 144 mod 17 = 8. Then x₃ = 8²−10−3 = 51 mod 17 = 0, and y₃ = 8×(10−0)−6 = 74 mod 17 = 6. So 3G+4G = (0, 6) — matching 7G directly computed by repeated doubling.",
+          },
+        ],
+      },
+      {
+        heading: "The order of a curve, and why it matters",
+        body: [
+          "Just as the integers mod p form a group of size p−1 under multiplication, the points on an elliptic curve mod p form a group too — and counting every point (including the point at infinity) gives the curve's order. Hasse's theorem guarantees this count stays close to p+1, but the exact value matters enormously: if the order has small factors, the same small-subgroup confinement attack covered in the Diffie-Hellman module works against ECC too, forcing a shared secret into a tiny, brute-forceable set of possibilities.",
+          "The toy curve used throughout this module happens to have exactly 19 points (18 finite points plus infinity) — and 19 is prime. That's not a coincidence for a well-chosen curve: real production curves like secp256k1 and P-256 are specifically selected to have prime (or near-prime) order precisely so there are no small subgroups for an attacker to confine anything into.",
+        ],
+        math: [
+          { expr: "|p + 1 - \\#E(\\mathbb{F}_p)| \\leq 2\\sqrt{p} \\quad \\text{(Hasse's theorem)}" },
+        ],
+      },
+      {
+        heading: "Brute-forcing a small elliptic curve discrete log",
+        body: [
+          "On the toy curve (order 19), the ECDLP is small enough to brute force by hand: starting from G and repeatedly adding G, check after each addition whether the running point matches the target Q. With only 19 possible scalars, this terminates fast — but the exact same search against a 256-bit curve would need to check roughly 2²⁵⁶ points, which is the entire reason ECC is considered secure at that scale.",
+        ],
+        practice: [
+          {
+            prompt: "On the curve y² = x³ + 2x + 2 (mod 17) with G = (5, 1), find k (between 1 and 19) such that kG = Q = (7, 6).",
+            hint: "Start from G and keep adding G to the running total — kG = (k−1)G + G — until it matches Q.",
+            placeholder: "k",
+            answer: "9",
+            explanation: "Adding G repeatedly: 2G=(6,3), 3G=(10,6), 4G=(3,1), 5G=(9,16), 6G=(16,13), 7G=(0,6), 8G=(13,7), 9G=(7,6) — a match. So k = 9.",
           },
         ],
       },
@@ -985,7 +1139,7 @@ export const modules: Module[] = [
     title: "Diffie-Hellman key exchange",
     summary:
       "Two parties agree on a shared secret over a public channel, without ever transmitting the secret itself — the idea that started public-key cryptography.",
-    minutes: 24,
+    minutes: 34,
     category: "Protocols",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -1062,6 +1216,35 @@ export const modules: Module[] = [
         heading: "Safe primes and small-subgroup attacks",
         body: [
           "The choice of p and g isn't arbitrary. If p is chosen carelessly, the group of values reachable by exponentiation can have small subgroups, and an attacker can sometimes force a DH exchange into one of those subgroups, drastically shrinking the search space for the discrete logarithm. Real implementations use \"safe primes\" (p where (p−1)/2 is also prime) specifically to avoid this, and validate that received public values aren't degenerate (like 0 or 1) before using them.",
+        ],
+      },
+      {
+        heading: "Small-subgroup confinement, worked by hand",
+        body: [
+          "Here's the attack concretely. Take p = 23, so p−1 = 22 = 2×11. The element 22 (which is −1 mod 23) has order exactly 2, since 22² = 484 ≡ 1 (mod 23). If a malicious or compromised peer substitutes g = 22 in place of the real generator, then no matter what secret exponent b the victim picks — a huge, perfectly random 256-bit number — the result 22ᵇ mod 23 can only ever be 22 (if b is odd) or 1 (if b is even). The victim's secret is completely irrelevant; there are only two possible outputs, and an attacker checks both instantly.",
+          "This is exactly why real implementations validate the order of a received public value before using it, not just its range — a value that happens to generate only a tiny subgroup is just as dangerous as an out-of-range one, even though it looks like a perfectly ordinary number.",
+        ],
+        math: [
+          { expr: "22 \\equiv -1 \\pmod{23}, \\quad \\mathrm{ord}(22) = 2 \\quad\\Rightarrow\\quad 22^{b} \\in \\{1, 22\\} \\ \\text{for every } b" },
+        ],
+      },
+      {
+        heading: "Breaking small discrete logs: brute force and baby-step giant-step",
+        body: [
+          "The security of Diffie-Hellman rests entirely on the discrete logarithm problem being hard — but for small groups, it isn't hard at all. Worked example: with g = 5 and p = 23 (5 turns out to be a primitive root, generating all 22 non-zero values), find x such that 5ˣ ≡ 10 (mod 23). Just compute 5¹, 5², 5³, ... until one matches: 5¹=5, 5²=2, 5³=10 — found it, x = 3.",
+          "Brute force like this takes O(p) time — fine for p = 23, hopeless for a 2048-bit prime. Baby-step giant-step (BSGS) does much better, in O(√p) time, by splitting the exponent into two halves and meeting in the middle: precompute a table of gʲ for j = 0 to ⌈√p⌉, then repeatedly multiply the target h by g⁻ᵐ (for the same m = ⌈√p⌉) until the result lands in that table. The matching table entry and the number of giant steps taken combine into the full exponent. For g = 5, p = 97, h = 44, BSGS finds x = 58 — the same answer brute force would eventually reach, but touching roughly 2×√96 ≈ 20 values instead of up to 96.",
+        ],
+        math: [
+          { expr: "x = i \\cdot m + j \\quad \\text{where } g^{j} = h \\cdot g^{-mi}, \\quad m = \\lceil \\sqrt{p} \\rceil" },
+        ],
+        practice: [
+          {
+            prompt: "g = 5 is a primitive root mod p = 23. Find x such that 5ˣ ≡ 19 (mod 23), by brute-force computing powers of 5.",
+            hint: "Compute 5¹, 5², 5³, ... mod 23 in order until one equals 19.",
+            placeholder: "x",
+            answer: "15",
+            explanation: "5¹⁵ mod 23 = 19. Even by hand this only takes 15 multiplications — but the identical search against a 2048-bit prime would take longer than the age of the universe, which is exactly the security margin real Diffie-Hellman relies on.",
+          },
         ],
       },
       {

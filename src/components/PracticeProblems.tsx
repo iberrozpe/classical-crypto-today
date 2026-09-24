@@ -4,7 +4,13 @@ import { useState } from "react";
 import type { PracticeProblem } from "@/lib/content";
 
 function normalize(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
+  // Strips all whitespace and parens, and a leading "0x", so equivalent
+  // answers like "0, 6" / "(0,6)" / "0x1b" / "1B" all compare equal.
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/^0x/, "")
+    .replace(/[()\s]/g, "");
 }
 
 function Problem({ problem, index }: { problem: PracticeProblem; index: number }) {
