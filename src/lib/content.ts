@@ -732,6 +732,86 @@ export const modules: Module[] = [
     ],
   },
   {
+    slug: "des-data-encryption-standard",
+    title: "The Data Encryption Standard (DES)",
+    summary:
+      "AES's predecessor and the first cipher the world ever standardized. What retired it wasn't a flaw in the design — it was a key that was always too short.",
+    minutes: 18,
+    category: "Symmetric-key",
+    tags: ["developer", "architect", "researcher"],
+    sections: [
+      {
+        heading: "Why DES came first",
+        body: [
+          "DES was developed by IBM in the early 1970s (building on an earlier IBM cipher called Lucifer) in consultation with the NSA, and adopted as a U.S. government standard in 1977 — the direct ancestor of the 1970s revolution covered in the history module, and the first symmetric cipher to be publicly standardized, openly published, and thoroughly analyzed by the wider cryptographic community, rather than kept secret by whoever designed it.",
+          "It protected banking, government, and commercial traffic for nearly three decades before being formally withdrawn in 2005 — far longer than its designers expected. What eventually retired it wasn't a mathematical flaw in the cipher's structure; it was a key that was always too short, a lesson directly connected to the key-size guidance covered elsewhere in this catalog.",
+        ],
+      },
+      {
+        heading: "The Feistel network: DES's core structure",
+        body: [
+          "DES processes each 64-bit block by splitting it into two 32-bit halves and running them through 16 rounds of a Feistel network: each round takes the right half, transforms it with a round function F (keyed by that round's subkey), XORs the result into the left half, then swaps the two halves for the next round. This structure has one elegant, load-bearing property: decryption uses the exact same network, just with the round keys applied in reverse order — no separate \"inverse\" algorithm is needed, regardless of how complicated F itself is.",
+          "That property is a genuine trade-off against AES's design (covered in the previous module): AES's substitution-permutation network needs a distinct, deliberately designed inverse for every step (InvSubBytes, InvShiftRows, InvMixColumns), while a Feistel network gets decryption essentially for free, at the cost of only transforming half the block each round instead of all of it.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "One Feistel round",
+          steps: [
+            { label: "Split", detail: "The 64-bit block (after an initial fixed bit permutation) splits into a 32-bit left half L and right half R." },
+            { label: "Transform", detail: "The round function F combines R with this round's 48-bit subkey (derived from the main key), producing a 32-bit output." },
+            { label: "Mix", detail: "F's output is XORed into L, producing the new right half for the next round." },
+            { label: "Swap", detail: "The old R becomes the new L, and the mixed result becomes the new R — repeated for 16 rounds total." },
+          ],
+        },
+      },
+      {
+        heading: "DES's numbers, and why 56 bits stopped being enough",
+        body: [
+          "DES encrypts a 64-bit block using a key stored as 64 bits but only 56 bits of which are actually used for security — the remaining 8 bits are parity-check bits, one per byte, left over from an earlier era of unreliable hardware. That 56-bit effective key size was already a point of public controversy when DES was standardized in 1977, and it's the entire reason DES was eventually retired: computing power grew until exhaustive key search — trying every one of the 2⁵⁶ possible keys — became achievable.",
+          "That milestone arrived concretely in January 1999, when the EFF's purpose-built \"Deep Crack\" machine, combined with the distributed.net volunteer computing project, found a DES key by brute force in 22 hours and 15 minutes — a well-documented, widely cited demonstration that DES's key size, not its internal design, had become the weak point.",
+        ],
+        math: [
+          { expr: "\\text{expected keys to try} \\approx \\frac{2^{56}}{2} = 2^{55} \\quad \\text{(brute force finds the key after searching, on average, half the keyspace)}" },
+        ],
+        practice: [
+          {
+            prompt: "A brute-force machine tests keys at roughly 2⁴⁰ (about 1.1 trillion) keys per second. On average, brute force finds the correct DES key after searching half the 2⁵⁶ keyspace — that's 2⁵⁵ keys. How many seconds would that take?",
+            hint: "Divide 2⁵⁵ by the search rate 2⁴⁰ — the exponents subtract directly.",
+            placeholder: "seconds",
+            answer: "32768",
+            explanation: "2⁵⁵ ÷ 2⁴⁰ = 2¹⁵ = 32,768 seconds, about 9.1 hours — the same order of magnitude as the real 22h15m 1999 milestone (which beat the statistical average, since brute force can get lucky and find the key earlier than expected). Interestingly, 32,768 is also 2¹⁵ — the exact keyspace size of the Debian OpenSSL entropy bug covered in the randomness module, a coincidence of round numbers rather than a connection between the two incidents.",
+          },
+        ],
+      },
+      {
+        heading: "3DES and the meet-in-the-middle problem",
+        body: [
+          "The obvious fix for a too-short key is running DES multiple times with different keys — but the naive version of that idea, double DES (encrypt with key K1, then again with key K2), turns out to add almost no real security over single DES. A meet-in-the-middle attack defeats it: for a known plaintext/ciphertext pair, an attacker precomputes and stores the encryption of the plaintext under every one of the 2⁵⁶ possible K1 values in a lookup table, then tries decrypting the ciphertext under every possible K2 value, checking each result against that table. A match reveals both keys — in roughly 2⁵⁶ + 2⁵⁶ ≈ 2⁵⁷ total operations, not the 2¹¹² a naive \"two independent 56-bit keys\" estimate would suggest, at the cost of needing to store that 2⁵⁶-entry table in memory.",
+          "This is exactly why real-world triple DES (3DES) uses three passes in an encrypt-decrypt-encrypt pattern (with either two or three distinct keys) rather than stopping at two — the extra pass specifically closes the meet-in-the-middle gap, at the cost of running the DES round structure three times over for every block. Even so, 3DES's 64-bit block size (shared with single DES) has its own separate weakness at scale, which is why AES, with a 128-bit block and no such attack, fully replaced it rather than the industry settling on 3DES long-term.",
+        ],
+        math: [
+          { expr: "\\text{double-DES, naive estimate: } 2^{112} \\qquad \\text{double-DES, meet-in-the-middle: } \\approx 2^{57}" },
+        ],
+        advanced: true,
+        practice: [
+          {
+            prompt: "Naive intuition suggests double-DES (two independent 56-bit keys) gives 2¹¹² security. Meet-in-the-middle cuts that down to about 2⁵⁷. Expressed as an exponent of 2, how many times weaker is that (112 − 57)?",
+            hint: "Simple subtraction of the two exponents.",
+            placeholder: "exponent",
+            answer: "55",
+            explanation: "112 − 57 = 55, meaning meet-in-the-middle makes double-DES roughly 2⁵⁵ times weaker than the naive estimate — a security level barely better than single DES itself, despite using two full 56-bit keys. This is the precise mathematical reason 3DES uses three passes, not two.",
+          },
+        ],
+      },
+      {
+        heading: "DES's legacy: what AES kept, and what it dropped",
+        body: [
+          "AES deliberately abandoned the Feistel structure in favor of a substitution-permutation network (covered in the previous module) — a design that transforms the entire block every round instead of just half of it, converging to full diffusion in fewer rounds. What DES's era did establish and AES kept: a public, competitive standardization process (DES's NSA involvement, though it turned out not to have weakened the cipher, drove exactly the kind of public distrust that made AES's fully open NIST competition the model going forward), S-box-based non-linearity, and a fixed, published, thoroughly scrutinized algorithm rather than a proprietary secret one.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "stream-ciphers-chacha20",
     title: "Stream ciphers & ChaCha20-Poly1305",
     summary:
@@ -1574,6 +1654,94 @@ export const modules: Module[] = [
     ],
   },
   {
+    slug: "elgamal-cryptosystem",
+    title: "The ElGamal cryptosystem",
+    summary:
+      "Diffie-Hellman lets two people agree on a secret together. ElGamal uses that same discrete-log idea to let anyone encrypt to a public key — no live handshake required.",
+    minutes: 24,
+    category: "Public-key",
+    tags: ["developer", "architect", "researcher"],
+    sections: [
+      {
+        heading: "Diffie-Hellman, turned into encryption",
+        body: [
+          "Diffie-Hellman (previous module) needs both parties online at once, each contributing a public value in real time. ElGamal, published by Taher Elgamal in 1985, restructures the same discrete-log idea so a sender can encrypt to a recipient's already-published public key with no live interaction at all — the sender simply plays both roles of a DH exchange themselves.",
+          "The recipient publishes a public key A = gᵃ mod p exactly as in DH, keeping the private key a secret. To encrypt a message m, the sender generates a fresh, one-time secret k (never reused), computes c₁ = gᵏ mod p — their own \"DH public value\" — and combines it with A to derive a shared secret s = Aᵏ mod p = g^(ak) mod p, exactly the DH shared-secret computation, done unilaterally by the sender alone. That shared value s masks the message: c₂ = m·s mod p. The ciphertext is the pair (c₁, c₂).",
+        ],
+        math: [
+          {
+            expr: "A = g^{a} \\bmod p \\quad \\text{(recipient's public key)}",
+            caption: "Published in advance, exactly as in Diffie-Hellman.",
+          },
+          {
+            expr: "c_1 = g^{k} \\bmod p \\qquad s = A^{k} \\bmod p \\qquad c_2 = m \\cdot s \\bmod p",
+            caption: "The sender's one-time secret k plays the role of the sender's \"half\" of a DH exchange.",
+          },
+        ],
+        diagram: {
+          type: "sequence",
+          title: "ElGamal encryption and decryption",
+          steps: [
+            { label: "Recipient publishes A", detail: "A = gᵃ mod p, computed once and reused for every message anyone ever sends them." },
+            { label: "Sender picks a fresh k", detail: "A brand-new random value, generated separately for every single message — never reused." },
+            { label: "Sender computes c₁ and the mask", detail: "c₁ = gᵏ mod p, and the shared value s = Aᵏ mod p = g^(ak) mod p — the same value the recipient will independently derive." },
+            { label: "Sender masks the message", detail: "c₂ = m·s mod p. The ciphertext (c₁, c₂) is sent — s itself never crosses the wire." },
+            { label: "Recipient recovers s", detail: "Using their private key: s = c₁ᵃ mod p = (gᵏ)ᵃ = g^(ak) mod p — identical to the sender's s, without any further communication." },
+            { label: "Recipient unmasks m", detail: "m = c₂ · s⁻¹ mod p, using the modular inverse of s." },
+          ],
+        },
+      },
+      {
+        heading: "A worked example, reusing Alice's Diffie-Hellman keypair",
+        body: [
+          "Take the exact p = 23, g = 5, and Alice's secret a = 6 from the Diffie-Hellman module's worked example — her public key there was A = 5⁶ mod 23 = 8. Now Bob wants to send Alice the message m = 10 using ElGamal, encrypting to that same public key.",
+          "Bob generates a fresh one-time secret k = 15 (reusing the numeral from the DH module's \"Bob\" purely for familiarity — in a real exchange this has nothing to do with any DH session). He computes c₁ = 5¹⁵ mod 23 = 19, and the shared mask s = 8¹⁵ mod 23 = 2. The ciphertext's second half is c₂ = 10 × 2 mod 23 = 20. Bob sends the pair (19, 20).",
+          "Alice decrypts using her private key: s = 19⁶ mod 23 = 2 — the identical mask Bob computed, recovered without Bob ever having sent it. The modular inverse of 2 mod 23 is 12 (2×12 = 24 ≡ 1), so m = 20 × 12 mod 23 = 240 mod 23 = 10 — the original message, recovered exactly.",
+        ],
+        math: [
+          { expr: "c_1 = 5^{15} \\bmod 23 = 19 \\qquad c_2 = 10 \\times 2 \\bmod 23 = 20" },
+          { expr: "s = 19^{6} \\bmod 23 = 2 \\qquad m = 20 \\times 2^{-1} \\bmod 23 = 10" },
+        ],
+        practice: [
+          {
+            prompt: "Using the same p = 23, g = 5, and Alice's public key A = 8, Bob encrypts message m = 17 with a fresh one-time secret k = 9. Compute the ciphertext pair (c₁, c₂).",
+            hint: "c₁ = gᵏ mod p. The shared mask is s = Aᵏ mod p. Then c₂ = m·s mod p.",
+            placeholder: "c1,c2",
+            answer: "11,15",
+            explanation: "c₁ = 5⁹ mod 23 = 11. The mask s = 8⁹ mod 23 = 17. c₂ = 17 × 17 mod 23 = 15. So the ciphertext is (11, 15). Alice would recover m = 17 exactly as in the worked example: compute s = 11⁶ mod 23 = 17, then m = 15 × 17⁻¹ mod 23.",
+          },
+        ],
+      },
+      {
+        heading: "Why ElGamal ciphertexts are always different, even for the same message",
+        body: [
+          "Encrypting the identical message m = 10 to Alice's public key twice, with two different one-time secrets k, produces two completely different ciphertexts — because every encryption draws a fresh k, and c₁ and the mask s both depend on it. This is exactly the randomized-encryption property that raw RSA (covered in the RSA padding module) lacks without OAEP: an eavesdropper who sees two ElGamal ciphertexts to the same public key can't tell whether they encrypt the same message or different ones, which is essential for semantic security.",
+          "The trade-off is size: an ElGamal ciphertext is always twice the length of the plaintext (the pair c₁, c₂, each roughly the size of the modulus), where RSA's ciphertext is the same size as its modulus regardless. This is one reason ElGamal-family encryption (and its elliptic-curve variants) shows up more often for key transport and hybrid encryption than for encrypting bulk data directly — the same design choice RSA makes for the same reason.",
+        ],
+      },
+      {
+        heading: "Schnorr signatures: the same idea, turned into signing",
+        body: [
+          "ElGamal's discrete-log structure also produces signatures directly — DSA (the Digital Signature Algorithm) is essentially ElGamal signing standardized by NIST, and the Schnorr signature scheme (patented until 2008, now the basis of Bitcoin's Taproot upgrade) is a cleaner, more efficient variant of the same idea. The core move: sign by committing to a fresh random value, then blend that commitment with the message hash and the private key so that only the private key's holder could have produced a value the public key verifies.",
+          "Signing: pick a fresh one-time secret k, compute the commitment r = gᵏ mod p, derive a challenge e from hashing r and the message together, then compute s = (k − a·e) mod q, where q is the order of the group (here, the same q = p−1 = 22 used throughout this toy example, since g = 5 generates the full group). The signature is the pair (r, e) or (s, e), depending on the convention. Verification recomputes r′ = gˢ·Aᵉ mod p and checks it matches the original r (or that hashing r′ reproduces e) — succeeding only for a signature actually produced with the matching private key a.",
+        ],
+        math: [
+          { expr: "r = g^{k} \\bmod p \\qquad s = (k - a \\cdot e) \\bmod q \\qquad \\text{verify: } g^{s} \\cdot A^{e} \\bmod p \\stackrel{?}{=} r" },
+        ],
+        advanced: true,
+        practice: [
+          {
+            prompt: "Using a = 6 and q = 22 (as above), a signer picks a fresh secret k = 17 and a challenge e = 5 (derived from hashing the commitment and the message). Compute s = (k − a·e) mod q.",
+            hint: "17 − 6×5 = −13. Reduce that mod 22 to land in the range 0–21.",
+            placeholder: "s",
+            answer: "9",
+            explanation: "17 − 6×5 = 17 − 30 = −13, and −13 mod 22 = 9 (since −13 + 22 = 9). A verifier who knows only the public key A = 8 (not the private key a = 6) can still confirm this signature is genuine by checking that g⁹ · A⁵ mod 23 reproduces the original commitment r — without ever learning a.",
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "hash-functions-and-signatures",
     title: "Hash functions & digital signatures",
     summary:
@@ -2034,6 +2202,121 @@ export const modules: Module[] = [
             { label: "The fix", detail: "A correctly implemented verifier pins the expected algorithm itself and rejects any token that doesn't match — never trusting the header's own claim." },
           ],
         },
+      },
+    ],
+  },
+  {
+    slug: "passkeys-webauthn",
+    title: "Passkeys & WebAuthn",
+    summary:
+      "A passkey is what you get when you replace a password with a public-key challenge-response protocol. It fixes reuse, phishing, and breaches in one move.",
+    minutes: 22,
+    category: "Protocols",
+    tags: ["developer", "architect", "itops", "curious"],
+    sections: [
+      {
+        heading: "Why passwords fail, structurally",
+        body: [
+          "Passwords have three chronic weaknesses, and all three trace back to the same root cause: a password is a shared secret, and both the user and the server have to know it. Reuse happens because nobody can remember a unique password per site, so one breach unlocks many accounts. Phishing works because a password carries no built-in notion of which site it belongs to — a convincing fake login page can extract it just as easily as the real one. And breaches matter because the server has to store something to check a password against; when that database leaks, the stored hashes (covered in the key-derivation-functions module) become an offline cracking target.",
+          "A passkey replaces the shared secret with a key pair. The private key is generated on, and never leaves, the user's device (a phone, laptop, or hardware key); the server only ever receives and stores the matching public key. The server literally has nothing left worth stealing — a leaked passkey database reveals only public keys, which are already public by design.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "Password",
+            points: [
+              "A shared secret — both user and server must know it",
+              "The server stores a hash worth cracking if the database leaks",
+              "Carries no notion of which site it belongs to — a phishing page can capture it directly",
+            ],
+          },
+          right: {
+            title: "Passkey",
+            points: [
+              "A private key the user keeps, and a public key the server keeps",
+              "The server stores only a public key — nothing worth stealing",
+              "Automatically scoped to one exact origin by the browser — a phishing site can't even request the right key",
+            ],
+          },
+        },
+      },
+      {
+        heading: "Registration: creating a passkey",
+        body: [
+          "Signing up for a passkey is a textbook public-key generation step, run inside secure hardware rather than in software. The site's server sends a random challenge and its own identity (the relying party ID — essentially its domain). The user's authenticator — a Secure Enclave, a TPM, or a dedicated hardware key — generates a fresh key pair specifically for that site, signs the challenge with the new private key to prove the hardware genuinely produced it, and returns the public key plus that signature. The server verifies the signature and stores the public key, tied to that user's account.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "Passkey registration",
+          steps: [
+            { label: "Server sends a challenge", detail: "A fresh random value, plus the site's relying party ID (its domain)." },
+            { label: "Authenticator generates a key pair", detail: "A brand-new private/public key pair, generated inside secure hardware and scoped to this one site." },
+            { label: "Authenticator signs the challenge", detail: "Proving this specific hardware, unlocked by the user's biometric or PIN, produced the new key pair." },
+            { label: "Server stores the public key", detail: "Tied to the user's account. The private key never left the device and was never transmitted." },
+          ],
+        },
+      },
+      {
+        heading: "Login: proving possession without revealing anything",
+        body: [
+          "Authentication is a direct application of the challenge-response identification pattern that underlies the Schnorr signature scheme covered in the ElGamal module: the server sends a fresh random challenge, the device signs it with the stored private key (after the user unlocks that key locally with a biometric or PIN), and the server verifies the signature using the public key it already has on file. Nothing secret ever crosses the network in either direction — not in registration, and not here.",
+          "A fresh challenge every time is what turns this into proof of live possession rather than a replayable secret: signing yesterday's challenge proves nothing about today's login attempt, unlike a password, which is exactly as useful to an attacker on its hundredth use as its first.",
+        ],
+        math: [
+          { expr: "\\text{sign: } \\sigma = \\mathrm{Sign}(\\text{privateKey}, \\text{challenge}) \\qquad \\text{verify: } \\mathrm{Verify}(\\text{publicKey}, \\text{challenge}, \\sigma) \\stackrel{?}{=} \\text{true}" },
+        ],
+      },
+      {
+        heading: "Why this defeats phishing specifically",
+        body: [
+          "Passwords and even one-time codes both fail against phishing because a human has to judge whether a login page is legitimate — and attackers are very good at making that judgment fail. WebAuthn removes the human from that specific decision: the browser itself binds every key pair to the exact origin (scheme + domain + port) it was created on, and will only ever offer a key to the origin that owns it. A phishing site at a lookalike domain isn't shown a slightly-suspicious login form the user might click through anyway — it's never even offered the credential to begin with, because the browser's own origin check fails before any signing happens.",
+          "This is the single biggest practical difference between passkeys and SMS or app-based one-time codes: an OTP is just another shared secret the user can be tricked into typing into the wrong site, while a passkey's origin binding makes that specific trick structurally impossible, not just less likely.",
+        ],
+      },
+      {
+        heading: "Device-bound vs. synced passkeys",
+        body: [
+          "Not every passkey has an identical trust model. A device-bound passkey never leaves the secure hardware it was created on — maximally resistant to extraction, but unusable if that device is lost, with no backup. A synced passkey backs up an encrypted copy to the user's cloud keychain (iCloud Keychain, Google Password Manager), so it's available on a new device automatically — at the cost of trusting that cloud provider's own encryption and account-recovery process as part of the overall security model.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "Device-bound",
+            points: [
+              "Private key never leaves the secure hardware it was generated on",
+              "Maximum resistance to extraction, even by the device's own OS",
+              "Lost device with no backup means the passkey is permanently gone",
+            ],
+          },
+          right: {
+            title: "Synced",
+            points: [
+              "An encrypted copy backs up to the user's cloud keychain",
+              "Automatically available on a new device, no re-registration needed",
+              "Adds the cloud provider's encryption and account-recovery flow to the trust model",
+            ],
+          },
+        },
+      },
+      {
+        heading: "Reading the authenticator's response, byte by byte",
+        body: [
+          "Every WebAuthn assertion includes a flags byte in its authenticator data, packing several yes/no facts about the login into individual bits — the same bitwise-flag pattern that shows up throughout networking and protocol design. Bit 0 is User Present (UP): did a human interact with the authenticator at all, even just a touch? Bit 2 is User Verified (UV): did that interaction include an actual biometric or PIN check, not just a touch? Bit 6 is Attested credential data included (AT), set only during registration, not login.",
+          "Worked example: a registration response carries the flags byte 0x45 = 01000101 in binary. Bit 0 = 1 (UP: user present), bit 2 = 1 (UV: user verified via biometric/PIN), bit 6 = 1 (AT: this is a registration, carrying new credential data) — every other bit is 0. A server reading this byte confirms, without parsing anything else, that a verified human registered a new credential just now.",
+        ],
+        math: [
+          { expr: "\\text{flags} = (\\text{AT} \\ll 6) \\;|\\; (\\text{UV} \\ll 2) \\;|\\; (\\text{UP} \\ll 0)" },
+        ],
+        advanced: true,
+        practice: [
+          {
+            prompt: "A login (not registration) assertion has User Present (bit 0) and User Verified (bit 2) both set to 1, with every other flag bit — including Attested credential data (bit 6) — set to 0. What is the flags byte's value in decimal?",
+            hint: "Bit 0 contributes 2⁰ = 1, bit 2 contributes 2² = 4. Add the contributions of every set bit.",
+            placeholder: "decimal value",
+            answer: "5",
+            explanation: "2⁰ + 2² = 1 + 4 = 5. In hex that's 0x05 — no AT bit, correctly reflecting that this is a login (proving possession of an existing key) rather than a registration (creating a new one), which is exactly the kind of detail a server checks to make sure a client isn't sending the wrong type of response for the ceremony it requested.",
+          },
+        ],
       },
     ],
   },
@@ -2544,6 +2827,89 @@ export const modules: Module[] = [
     ],
   },
   {
+    slug: "shamir-secret-sharing",
+    title: "Shamir's Secret Sharing",
+    summary:
+      "How do you protect a master key so no single person holds it, yet any k of a trusted group can reconstruct it together? Split it across a polynomial.",
+    minutes: 20,
+    category: "Practice",
+    tags: ["developer", "architect", "itops", "researcher"],
+    sections: [
+      {
+        heading: "The problem: no single point of failure, no single point of trust",
+        body: [
+          "A master key, a cryptocurrency wallet's seed, a nuclear launch code — some secrets are too sensitive to hand to any one person, and too important to risk losing if that one person is unavailable, compromised, or dishonest. Adi Shamir's 1979 secret sharing scheme solves both problems at once: split a secret into n shares, distributed to n different participants, such that any k of them can reconstruct the original secret exactly — and any k−1 reveal absolutely nothing about it, not even a probabilistic hint.",
+          "This is a (k, n)-threshold scheme: k is the number of shares required, n is the total number handed out. Unlike simply cutting the secret into n pieces (which would need every single piece back), a threshold scheme tolerates up to n−k missing or unavailable shares — lost hardware, an absent officer, a departed employee — while still recovering completely once enough shares are present.",
+        ],
+      },
+      {
+        heading: "The core idea: it takes k points to pin down a degree-(k−1) polynomial",
+        body: [
+          "The entire scheme rests on one fact from basic algebra: two points determine a unique line; three points determine a unique parabola; in general, k points uniquely determine a polynomial of degree k−1 — and with only k−1 points, infinitely many different degree-(k−1) polynomials still pass through them all, with no way to narrow it down further.",
+          "Shamir's insight: hide the secret as the constant term of a random polynomial of degree k−1, and hand each participant one other point on that polynomial's curve as their share. Reconstructing needs exactly k points — the threshold — because that's exactly how many it takes to pin the polynomial down uniquely.",
+        ],
+        math: [
+          { expr: "f(x) = s + a_1 x + a_2 x^2 + \\cdots + a_{k-1} x^{k-1} \\pmod{p}, \\qquad s = f(0)" },
+        ],
+      },
+      {
+        heading: "Splitting the secret",
+        body: [
+          "To share a secret s with threshold k among n participants: pick a prime p larger than both the secret and the number of participants, then choose k−1 random coefficients a₁, …, a_{k−1} to build the polynomial f(x) = s + a₁x + a₂x² + ⋯ + a_{k−1}x^{k−1} mod p. Each participant i (for i = 1, …, n) receives the point (i, f(i)) as their share. Notice x = 0 is never handed out to anyone — that point is the secret itself.",
+          "Worked example: share the secret s = 13 with threshold k = 3 among n = 5 participants, working mod p = 23. Pick random coefficients a₁ = 2, a₂ = 4, giving f(x) = 13 + 2x + 4x² mod 23. Evaluating at x = 1 through 5 gives the five shares: (1, 19), (2, 10), (3, 9), (4, 16), (5, 8). The dealer then destroys the polynomial and every coefficient, keeping no copy of the secret anywhere.",
+        ],
+        math: [
+          { expr: "f(x) = 13 + 2x + 4x^{2} \\pmod{23}" },
+          { expr: "\\text{shares: } (1,19),\\ (2,10),\\ (3,9),\\ (4,16),\\ (5,8)" },
+        ],
+      },
+      {
+        heading: "Recovering the secret with Lagrange interpolation",
+        body: [
+          "Given any k shares, Lagrange interpolation reconstructs the unique polynomial through them and evaluates it at x = 0 to recover the secret directly — without ever rebuilding the coefficients a₁ through a_{k−1} along the way. For each share (xⱼ, yⱼ), its contribution to the secret is yⱼ multiplied by a basis term built from every other chosen share's x-coordinate; the terms from all k shares add up to exactly s.",
+          "Worked example: reconstruct s from shares (1, 19), (2, 10), and (3, 9). Each share's term is yⱼ times a fraction built from the other two x-values, reduced mod 23 using modular inverses (the same extended-Euclidean technique from the math foundations module): the share at x=1 contributes 11, the share at x=2 contributes 16, and the share at x=3 contributes 9. Summed: 11 + 16 + 9 = 36 ≡ 13 (mod 23) — the original secret, recovered exactly, with no rounding and no approximation.",
+        ],
+        math: [
+          {
+            expr: "s = \\sum_{j=1}^{k} y_j \\prod_{m \\neq j} \\frac{-x_m}{x_j - x_m} \\pmod{p}",
+            caption: "Each share's y-value is weighted by a basis term depending only on the x-coordinates of the shares used.",
+          },
+        ],
+        practice: [
+          {
+            prompt: "Using the same secret-sharing setup (p = 23, secret s = 13), a different group of 3 participants pools shares (2, 10), (4, 16), and (5, 8). Their individual Lagrange terms come out to 18, 12, and 6. What secret do they recover?",
+            hint: "Sum the three terms and reduce mod 23.",
+            placeholder: "secret",
+            answer: "13",
+            explanation: "18 + 12 + 6 = 36, and 36 mod 23 = 13 — the identical secret recovered by the first group, confirming any 3 of the 5 shares reconstruct the same polynomial and the same constant term, exactly as the threshold guarantees.",
+          },
+        ],
+      },
+      {
+        heading: "Perfect secrecy below the threshold",
+        body: [
+          "With only k−1 shares, every possible secret value remains exactly equally consistent with what's held — for any candidate secret, there's precisely one polynomial of the right degree that fits both the held shares and that candidate. No computational shortcut narrows this down, because there's genuinely nothing to compute toward: this is information-theoretic security, the same category of guarantee Shannon proved for the one-time pad in the history module, not merely computational security like AES or RSA.",
+          "That's a meaningfully stronger guarantee than almost everything else in this catalog. An attacker with unlimited future computing power — including a full-scale quantum computer running Shor's algorithm — gains nothing at all from k−1 shares, because the missing information was never encoded in the shares in a breakable form to begin with.",
+        ],
+      },
+      {
+        heading: "Where this actually gets used",
+        body: [
+          "Secret sharing underpins several real, widely deployed systems: threshold wallets and HSMs, where a cryptocurrency key or hardware security module operation requires k of n officers to cooperate before anything can be signed or spent; threshold signatures and multi-party computation (MPC), which extend the same idea to computing or signing without ever assembling the full key in one place, even transiently; and key backup and escrow, recovering a lost key from a quorum of custodians while tolerating some number of them being unreachable.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "Where (k, n)-threshold sharing shows up",
+          blocks: [
+            { label: "Threshold wallets & HSMs", detail: "A cryptocurrency key or HSM operation usable only when k of n officers cooperate — no single compromised or coerced individual can act alone." },
+            { label: "Threshold signatures & MPC", detail: "Signing or computing a function of a secret without ever reconstructing the full secret in one place, even briefly." },
+            { label: "Key backup & escrow", detail: "Recovering a lost key from a quorum of trusted custodians, tolerating some number of lost or unavailable shares." },
+          ],
+        },
+      },
+    ],
+  },
+  {
     slug: "quantum-threat-shor",
     title: "Why quantum computers break this: Shor's algorithm",
     summary:
@@ -2723,14 +3089,17 @@ export const personas: Persona[] = [
       "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
       "symmetric-key-aes",
+      "des-data-encryption-standard",
       "stream-ciphers-chacha20",
       "rsa-public-key",
       "rsa-padding-oaep-pkcs1",
       "elliptic-curve-cryptography",
       "diffie-hellman-key-exchange",
+      "elgamal-cryptosystem",
       "hash-functions-and-signatures",
       "key-derivation-functions",
       "jwt-and-api-auth",
+      "passkeys-webauthn",
       "tls-in-practice",
       "random-number-generation",
       "side-channel-and-timing-attacks",
@@ -2745,12 +3114,15 @@ export const personas: Persona[] = [
     firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 40 },
     moduleSlugs: [
       "diffie-hellman-key-exchange",
+      "elgamal-cryptosystem",
       "elliptic-curve-cryptography",
       "hash-functions-and-signatures",
       "digital-certificates-x509",
       "tls-in-practice",
       "ssh-protocol",
+      "passkeys-webauthn",
       "secure-messaging-signal-protocol",
+      "shamir-secret-sharing",
       "key-sizes-and-security-levels",
       "side-channel-and-timing-attacks",
       "harvest-now-decrypt-later",
@@ -2769,6 +3141,8 @@ export const personas: Persona[] = [
       "tls-in-practice",
       "digital-certificates-x509",
       "ssh-protocol",
+      "passkeys-webauthn",
+      "shamir-secret-sharing",
       "key-sizes-and-security-levels",
       "random-number-generation",
     ],
@@ -2795,6 +3169,7 @@ export const personas: Persona[] = [
       "rsa-public-key",
       "tls-in-practice",
       "hash-functions-and-signatures",
+      "passkeys-webauthn",
       "blockchain-and-signatures",
       "secure-messaging-signal-protocol",
     ],
