@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { furtherReadingSites, furtherReadingBooks } from "@/lib/further-reading";
+import { modules } from "@/lib/content";
+import { playgroundTools } from "@/lib/playground";
+import { glossaryTerms } from "@/lib/glossary";
 
 export const metadata: Metadata = {
   title: "About — Classical Crypto Today",
@@ -9,11 +12,11 @@ export const metadata: Metadata = {
 
 const sections = [
   { href: "/explore", title: "Explore", body: "Pick a persona — executive, GRC, developer, architect, IT ops, researcher, or curious — and get a reading path tailored to it. Nothing is hidden from anyone; a persona just reorders what you see first." },
-  { href: "/learn", title: "Learn", body: "21 modules, from the history of cryptography through RSA, ECC, AES, TLS, and the post-quantum threat, each with diagrams, worked examples, and real formulas." },
-  { href: "/playground", title: "Playground", body: "10 tools that run real cryptography in your browser via the Web Crypto API — AES-GCM, RSA-OAEP, ECDSA, X3DH, and more. Nothing is simulated, and nothing leaves your browser." },
+  { href: "/learn", title: "Learn", body: `${modules.length} modules, from the history of cryptography through RSA, ECC, AES, TLS, and the post-quantum threat, each with diagrams, worked examples, and real formulas.` },
+  { href: "/playground", title: "Playground", body: `${playgroundTools.length} tools that run real cryptography in your browser via the Web Crypto API — AES-GCM, RSA-OAEP, ECDSA, X3DH, and more. Nothing is simulated, and nothing leaves your browser.` },
   { href: "/navigate", title: "Navigate", body: "Every module, tool, and category as a single connected graph, for when you'd rather explore by clicking around than by reading a list." },
   { href: "/compare", title: "Compare", body: "Side-by-side cheat sheets — RSA vs. ECC vs. Diffie-Hellman, AES modes, hash functions — for when you already know the material and just need the numbers." },
-  { href: "/glossary", title: "Glossary", body: "76 terms used across the site, defined plainly and linked back to the module that covers each one in depth." },
+  { href: "/glossary", title: "Glossary", body: `${glossaryTerms.length} terms used across the site, defined plainly and linked back to the module that covers each one in depth.` },
   { href: "/migration-checklist", title: "Checklist", body: "A practical PQC-migration inventory for GRC and architecture teams — not a compliance audit, a starting point." },
   { href: "/assess", title: "Assess", body: "Eight questions about what you actually run today, mapped to a prioritized reading list." },
 ];
