@@ -603,6 +603,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Byte-at-a-time ECB decryption: exploiting a real ECB oracle",
+        advanced: true,
         body: [
           "Pattern leakage is bad enough on its own, but ECB has a second, far more damaging failure mode whenever an attacker can get their own chosen bytes prepended to a secret before it's encrypted — a common situation, since many real services append a user-supplied value to session data before encrypting it. Because every block encrypts independently, an attacker can recover the secret one byte at a time, with no key required.",
           "The trick: pad the attacker-controlled input so exactly one unknown secret byte lands as the last byte of a block, then ask the oracle to encrypt every possible value (all 256 byte options) in that same position and compare each resulting ciphertext block to the real one. The match reveals the unknown byte outright. Shift the padding by one, and the just-recovered byte becomes known context for cracking the next one — repeating until the entire secret is exposed, block by block, byte by byte.",
@@ -649,6 +650,7 @@ export const modules: Module[] = [
       },
       {
         heading: "CBC bit-flipping: tampering without the key",
+        advanced: true,
         body: [
           "CBC's chaining formula has a sharp edge: decryption computes Pᵢ = AES_decrypt(Cᵢ) ⊕ Cᵢ₋₁. An attacker who flips a byte in Cᵢ₋₁ never touches AES_decrypt(Cᵢ) at all — but the XOR at the end means that same byte position in the decrypted Pᵢ flips by exactly the same amount. No key needed: change a ciphertext byte, and the corresponding plaintext byte changes by that identical delta, one block later. (The cost: block Pᵢ₋₁, which that ciphertext byte actually belongs to, decrypts to garbage — bit-flipping trades one block's integrity for control over the next.)",
           "Because of XOR's self-inverse property, the attacker doesn't even need to know the intermediate AES_decrypt(Cᵢ) value to pull this off. If the original plaintext byte was X and the target byte is Y, XORing X ⊕ Y into the corresponding ciphertext byte is enough — that delta passes straight through the final XOR unchanged.",
@@ -704,6 +706,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Inside GHASH: how the tag is actually built",
+        advanced: true,
         body: [
           "The encryption half of GCM is plain CTR mode: a counter block is encrypted and XORed with the plaintext. The authentication half runs in parallel — every ciphertext block is folded into a running value through multiplication in the finite field GF(2¹²⁸), keyed by a hash subkey H derived from encrypting an all-zero block. That running value is then XORed with one more encrypted counter block (using counter value J0, never reused for plaintext) to produce the final tag.",
         ],
@@ -1062,6 +1065,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Trial division: factoring a modulus that's simply too small",
+        advanced: true,
         body: [
           "Before reaching for anything clever, the most basic factoring approach is worth doing by hand once: test each small prime as a possible divisor of n, in order, until one divides evenly. This is trial division, and it's genuinely how you'd factor any RSA modulus small enough that its smaller prime factor is itself only a few digits — which is exactly why real RSA moduli use primes hundreds of digits long, putting trial division's O(√n) running time completely out of reach.",
           "Worked example: n = 979. Testing 2, 3, 5, 7 all fail; 11 divides evenly (979 ÷ 11 = 89), and 89 is itself prime. So n = 11 × 89 — found in five quick divisions, because the smaller factor happened to be tiny.",
@@ -1081,6 +1085,7 @@ export const modules: Module[] = [
       },
       {
         heading: "The cube-root attack: RSA with no padding and a small exponent",
+        advanced: true,
         body: [
           "If a message is encrypted with e = 3 and never padded, and the message M is small enough that M³ is actually less than the modulus n, something breaks completely: the modular reduction never triggers. C = M³ mod n is just C = M³, an ordinary integer cube — and anyone can recover M by taking an integer cube root, without touching the private key or factoring anything.",
           "Worked example: M = 123, e = 3, and n large enough that M³ < n. Then C = 123³ = 1,860,867. Taking the integer cube root of 1,860,867 gives back 123 directly. This is exactly why the padding module's warning about raw RSA matters in practice, not just in theory — OAEP defeats this attack by padding M out to the full size of n before encrypting, so M³ is always far larger than n and the modular wraparound always happens.",
@@ -1100,6 +1105,7 @@ export const modules: Module[] = [
       },
       {
         heading: "e = 1: the exponent that makes the modulus irrelevant",
+        advanced: true,
         body: [
           "Take the small-exponent problem to its extreme and something even more degenerate happens. With e = 1, encryption is C = M¹ mod n = M mod n — and since a message M is always chosen smaller than n to begin with, M mod n is just M. The modulus n never does anything at all; the \"ciphertext\" is the plaintext, unchanged, in plain sight.",
           "No cube root, no factoring, not even an integer root extraction — recovering M from C requires nothing but reading it. This is an extreme case of the same lesson as the cube-root attack: an exponent chosen for \"efficiency\" without any regard for the resulting math can throw away the encryption entirely, not just weaken it.",
@@ -1119,6 +1125,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Fermat's factorization: when p and q are too close together",
+        advanced: true,
         body: [
           "RSA's security assumes p and q are independently random primes of similar bit length — but if a flawed key generator picks them too close to each other, n = p×q can be factored almost instantly, no GNFS required. The trick: if p and q are close, then n = a² − b² for a = (p+q)/2 and b = (p−q)/2, and a ≈ √n. Starting from a = ⌈√n⌉ and incrementing, check at each step whether a² − n is a perfect square — the first one that is gives b, and then p = a−b, q = a+b.",
           "Worked example: p = 10007, q = 10009 (deliberately close). n = p×q = 100,160,063. ⌈√n⌉ = 10008. Compute 10008² − n = 100,160,064 − 100,160,063 = 1, which is 1² — a perfect square on the very first try. So b = 1, giving p = 10008−1 = 10007 and q = 10008+1 = 10009, recovered in a single step instead of factoring n the hard way.",
@@ -1138,6 +1145,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Wiener's attack: why the private exponent can't be small",
+        advanced: true,
         body: [
           "Just as e is usually chosen small for fast encryption, it might seem tempting to choose a small d for fast decryption. Wiener's attack shows exactly why that's disastrous: when d is smaller than roughly n^0.25, the fraction e/n turns out to be a very close rational approximation of a related fraction involving d — close enough that the continued-fraction expansion of e/n reveals d directly, with no factoring and no brute force at all.",
           "This is the mirror image of the e = 65537 story from earlier in this module: e gets to be small because encryption speed only matters to the sender, but d must always be large, because decryption speed advantages for the key-holder aren't worth handing an attacker a shortcut. Real implementations enforce a minimum size for d specifically to stay outside Wiener's reach.",
@@ -1188,6 +1196,7 @@ export const modules: Module[] = [
       },
       {
         heading: "The oracle, step by step",
+        advanced: true,
         body: [
           "Bleichenbacher's attack doesn't need to see plaintext — it only needs a yes/no signal about whether a decrypted, attacker-modified ciphertext happens to have valid PKCS#1 padding. That single bit of leakage, repeated tens of thousands of times against different modified ciphertexts, is enough to mathematically narrow down the original plaintext to an exact value.",
         ],
@@ -1280,6 +1289,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Montgomery's ladder: making scalar multiplication constant-time",
+        advanced: true,
         body: [
           "Double-and-add has a subtle problem that has nothing to do with the underlying math: its running time and operation pattern depend directly on the bits of the secret scalar k. A doubling happens every step, but an addition only happens on a 1-bit — so an attacker who can measure timing or power consumption precisely enough (the side-channel attacks covered elsewhere in this catalog) can potentially read k's bits straight off the execution pattern, one bit-dependent branch at a time.",
           "Montgomery's ladder fixes this by restructuring the algorithm so every single step, regardless of whether the current bit is 0 or 1, performs exactly one doubling and one addition — just applied to different running values depending on the bit. The total work per step never changes, so there's no timing signal tied to the scalar's bit pattern left to leak. This is precisely the algorithm underneath X25519, the Curve25519-based key exchange mentioned earlier in this module, and it's a big part of why Curve25519 implementations are considered easier to write safely than older curves.",
@@ -1346,6 +1356,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Pohlig-Hellman: when a smooth curve order breaks everything",
+        advanced: true,
         body: [
           "\"Small factors in the order\" isn't just a small-subgroup annoyance — if the order factors completely into small primes (a \"smooth\" order), the Pohlig-Hellman algorithm breaks the ECDLP entirely, no matter how large the curve's field is. The idea directly reuses two tools already covered in this catalog: solve the discrete log separately inside each small prime-order subgroup (fast, since each one is individually tiny — brute force or baby-step giant-step handles it), then stitch those partial results back together into the full private key using the Chinese Remainder Theorem from the math foundations module.",
           "This is exactly why curve order matters as much as field size: a 256-bit field with a smooth, small-factor order is not a 256-bit-secure curve at all — its real security is bounded by the largest prime factor of the order, not by the field's bit length. Production curves are chosen with prime (or near-prime) order specifically to make Pohlig-Hellman's divide-and-conquer approach have nothing to divide.",
@@ -1434,6 +1445,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Curveball: forging trust without ever learning the private key",
+        advanced: true,
         body: [
           "Not every real-world ECDSA break needs a leaked nonce. CVE-2020-0601 — nicknamed \"Curveball\", disclosed by the NSA in January 2020 — exploited a validation gap in Windows' CryptoAPI: it checked whether a certificate's public key point matched a trusted root's public key, but never checked that the certificate's explicit curve parameters (specifically, the base point G) matched the standard, fixed generator for that named curve.",
           "That gap is enough to forge a trusted certificate without factoring anything or learning any real private key. An attacker picks their own secret integer k, then computes a new base point G′ = k⁻¹ · Q, where Q is the real root CA's already-trusted public key. Now k · G′ = k · (k⁻¹ · Q) = Q exactly — so the point Q, which Windows already trusts, is also a valid \"public key\" under the attacker's own private key k and their substituted generator G′. The attacker can sign anything with k, present G′ as the certificate's domain parameters, and a vulnerable verifier that only checks \"does the public key point equal Q\" accepts it — never noticing the generator itself was swapped out from under it.",
@@ -1546,6 +1558,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Parameter injection: an active attacker doesn't need to break the math",
+        advanced: true,
         body: [
           "An attacker positioned to rewrite messages in transit (not just read them) has a far cheaper option than solving a discrete logarithm: replace the public generator g itself with a degenerate value before either side uses it. Three substitutions each force the resulting shared secret to one of a tiny handful of possible values, regardless of how large and random Alice's and Bob's real secret exponents are.",
           "The simplest: substitute g = 1. Then every public value A = 1ᵃ mod p and B = 1ᵇ mod p is just 1, and the final shared secret gᵃᵇ = 1ᵃᵇ mod p is always 1 — for every possible a and b. Alice and Bob each still compute something and believe the exchange succeeded, but the \"secret\" was never actually secret; it's a fixed public constant the attacker knew before the handshake even began.",
@@ -1583,6 +1596,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Logjam: downgrading to export-grade parameters",
+        advanced: true,
         body: [
           "The 2015 Logjam attack targeted a different weakness: leftover \"export-grade\" DH cipher suites from 1990s-era US cryptography export restrictions, which capped key exchange parameters at a deliberately weak 512 bits. An active MITM attacker could rewrite the handshake's cipher-suite negotiation to force both a modern client and server down to this legacy 512-bit option, even though neither side actually wanted it.",
           "Once forced down to 512 bits, the discrete logarithm problem becomes tractable — not instantly, but within reach of a well-resourced attacker who precomputes most of the work for one fixed, widely reused prime ahead of time, then finishes the specific discrete log for each intercepted connection in minutes. The lesson generalizes well beyond DH: a protocol that still offers a deliberately weak option, even one nobody chooses under normal conditions, gives an active attacker a downgrade lever — the fix was simply retiring export-grade cipher suites entirely, not trying to strengthen them.",
@@ -1599,6 +1613,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Small-subgroup confinement, worked by hand",
+        advanced: true,
         body: [
           "Here's the attack concretely. Take p = 23, so p−1 = 22 = 2×11. The element 22 (which is −1 mod 23) has order exactly 2, since 22² = 484 ≡ 1 (mod 23). If a malicious or compromised peer substitutes g = 22 in place of the real generator, then no matter what secret exponent b the victim picks — a huge, perfectly random 256-bit number — the result 22ᵇ mod 23 can only ever be 22 (if b is odd) or 1 (if b is even). The victim's secret is completely irrelevant; there are only two possible outputs, and an attacker checks both instantly.",
           "This is exactly why real implementations validate the order of a received public value before using it, not just its range — a value that happens to generate only a tiny subgroup is just as dangerous as an out-of-range one, even though it looks like a perfectly ordinary number.",
@@ -1609,6 +1624,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Breaking small discrete logs: brute force and baby-step giant-step",
+        advanced: true,
         body: [
           "The security of Diffie-Hellman rests entirely on the discrete logarithm problem being hard — but for small groups, it isn't hard at all. Worked example: with g = 5 and p = 23 (5 turns out to be a primitive root, generating all 22 non-zero values), find x such that 5ˣ ≡ 10 (mod 23). Just compute 5¹, 5², 5³, ... until one matches: 5¹=5, 5²=2, 5³=10 — found it, x = 3.",
           "Brute force like this takes O(p) time — fine for p = 23, hopeless for a 2048-bit prime. Baby-step giant-step (BSGS) does much better, in O(√p) time, by splitting the exponent into two halves and meeting in the middle: precompute a table of gʲ for j = 0 to ⌈√p⌉, then repeatedly multiply the target h by g⁻ᵐ (for the same m = ⌈√p⌉) until the result lands in that table. The matching table entry and the number of giant steps taken combine into the full exponent. For g = 5, p = 97, h = 44, BSGS finds x = 58 — the same answer brute force would eventually reach, but touching roughly 2×√96 ≈ 20 values instead of up to 96.",
@@ -1804,6 +1820,7 @@ export const modules: Module[] = [
       },
       {
         heading: "SHA-256's padding, computed exactly",
+        advanced: true,
         body: [
           "The length-extension attack above depends on one precise mechanical detail: how SHA-256 pads a message before splitting it into 64-byte blocks. The rule is: append a single 0x80 byte, then enough zero bytes to leave exactly 8 bytes remaining in the current or next 64-byte block, then those final 8 bytes encode the original message's bit-length. The whole padded message always ends up a multiple of 64 bytes.",
           "Worked example: a 13-byte message. After the 0x80 byte, the running total is 14 bytes. To reach a multiple of 64 with 8 bytes left over for the length field, we need the total (before the length field) to hit 56 — so 56 − 14 = 42 zero bytes are added, followed by the 8-byte length. Total: 13 + 1 + 42 + 8 = 64 bytes, exactly one block.",
@@ -2189,6 +2206,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Algorithm confusion: turning a public key into an HMAC secret",
+        advanced: true,
         body: [
           "A more subtle attack targets servers that support both RS256 (asymmetric) and HS256 (symmetric) verification. If the verifier trusts the algorithm named in the token's own header rather than pinning the algorithm it expects, an attacker can take a server's public RSA key (which is, by design, public) and use it as the secret for an HS256-signed forged token. A verifier that blindly follows the header's \"alg\": \"HS256\" will compute the HMAC using that public key as the secret — and the attacker, who also has that public key, can compute the exact same HMAC.",
         ],
@@ -2747,6 +2765,7 @@ export const modules: Module[] = [
       },
       {
         heading: "Why these attacks need thousands of measurements",
+        advanced: true,
         body: [
           "A real timing leak is almost never a clean, single measurement — network jitter and OS scheduling noise usually dwarf the microsecond-scale signal an attacker is after. The fix is statistical: averaging N independent measurements shrinks random noise by a factor of √N while the real signal stays put, so the number of samples needed to pull a signal out of noise scales with the square of their ratio.",
           "Worked example: a 2-microsecond timing signal buried in 100 microseconds of network noise needs N = (100/2)² = 2,500 measurements averaged together before the signal reliably separates from the noise — which is exactly why real timing attacks like Lucky Thirteen require sending the same crafted request thousands of times, not once.",
