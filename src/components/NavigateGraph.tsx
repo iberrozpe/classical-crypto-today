@@ -151,12 +151,14 @@ export default function NavigateGraph({
   }
 
   function onBackgroundPointerDown(e: React.PointerEvent) {
+    e.preventDefault();
     pan.current = { startX: e.clientX, startY: e.clientY, origX: transform.x, origY: transform.y, moved: false };
     (e.target as Element).setPointerCapture(e.pointerId);
   }
 
   function onBackgroundPointerMove(e: React.PointerEvent) {
     if (!pan.current) return;
+    e.preventDefault();
     const dx = e.clientX - pan.current.startX;
     const dy = e.clientY - pan.current.startY;
     if (Math.hypot(dx, dy) > CLICK_THRESHOLD) pan.current.moved = true;
@@ -198,11 +200,12 @@ export default function NavigateGraph({
         <span className="ml-auto text-muted">Drag to pan · scroll to zoom · drag a node to reposition it</span>
       </div>
 
-      <div className="relative mt-3 overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="relative mt-3 overflow-hidden overscroll-none rounded-lg border border-border bg-surface">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="h-[560px] w-full touch-none select-none"
+          className="h-[560px] w-full touch-none select-none overscroll-none"
+          style={{ overscrollBehavior: "none" }}
           onPointerDown={onBackgroundPointerDown}
           onPointerMove={onBackgroundPointerMove}
           onPointerUp={onBackgroundPointerUp}
