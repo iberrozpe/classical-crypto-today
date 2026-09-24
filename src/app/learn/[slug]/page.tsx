@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getModule, modules, roleLabels } from "@/lib/content";
 import { playgroundTools } from "@/lib/playground";
+import { getQuiz } from "@/lib/quiz";
 import Math from "@/components/Math";
 import DiagramRenderer from "@/components/diagrams/DiagramRenderer";
 
@@ -28,6 +29,7 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
   const currentIndex = modules.findIndex((m) => m.slug === slug);
   const next = modules[currentIndex + 1];
   const relatedTools = playgroundTools.filter((t) => t.relatedModule === slug);
+  const quiz = getQuiz(slug);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -71,6 +73,21 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
           </section>
         ))}
       </article>
+
+      {quiz && (
+        <div className="mt-16 rounded-lg border border-border bg-surface p-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">Knowledge check</p>
+          <Link
+            href={`/learn/${slug}/quiz`}
+            className="mt-2 block text-lg font-semibold hover:text-accent"
+          >
+            Test what you just learned →
+          </Link>
+          <p className="mt-1 text-sm text-muted">
+            {quiz.questions.length} quick questions, with an explanation for every answer.
+          </p>
+        </div>
+      )}
 
       {relatedTools.length > 0 && (
         <div className="mt-16 rounded-lg border border-accent/40 bg-accent-soft p-6">
