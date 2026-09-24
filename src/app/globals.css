@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
   --background: #0b1120;
   --surface: #111a2e;
   --surface-hover: #172342;
@@ -9,6 +11,18 @@
   --muted: #93a1c4;
   --accent: #35e0c8;
   --accent-soft: #123833;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --background: #f7f8fb;
+  --surface: #ffffff;
+  --surface-hover: #eef1f7;
+  --border: #dde3ee;
+  --foreground: #101728;
+  --muted: #5b6478;
+  --accent: #0d9488;
+  --accent-soft: #ccfbf1;
 }
 
 @theme inline {

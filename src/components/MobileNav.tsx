@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinks, isActiveLink, IconMenu, IconX } from "./nav-links";
+import ThemeToggle from "./ThemeToggle";
 
 export default function MobileNav() {
   const pathname = usePathname();
@@ -66,6 +67,9 @@ export default function MobileNav() {
                 );
               })}
             </nav>
+            <div className="mt-auto border-t border-border pt-2">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}

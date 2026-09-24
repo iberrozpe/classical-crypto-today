@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinks, isActiveLink, IconChevronLeft, IconChevronRight } from "./nav-links";
+import ThemeToggle from "./ThemeToggle";
 
 const STORAGE_KEY = "cct-sidebar-collapsed";
 
@@ -79,9 +80,9 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {!collapsed && (
-        <div className="mt-auto px-4 py-4 text-xs text-muted">More sections coming soon.</div>
-      )}
+      <div className="mt-auto border-t border-border px-3 py-2">
+        <ThemeToggle collapsed={collapsed} />
+      </div>
     </aside>
   );
 }
