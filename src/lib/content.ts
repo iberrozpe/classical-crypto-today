@@ -993,6 +993,17 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "The chain, drawn out",
+        body: [
+          "Visually, Merkle-Damgård is nothing more than a straight line of compression steps, each one blind to everything except the chaining value handed to it and the next block of message — which is exactly why an attacker who only knows the final digest and the message's length can pick up the chain right where it left off and keep extending it.",
+        ],
+        diagram: {
+          type: "pipeline",
+          steps: ["IV", "M₁ → H₁", "M₂ → H₂", "M₃ → digest"],
+          caption: "Each box is one message block feeding the compression function alongside the previous chaining value — nothing else, which is the whole source of the length-extension weakness above.",
+        },
+      },
+      {
         heading: "Why HMAC isn't just H(key ‖ message)",
         body: [
           "Length extension is exactly why HMAC (covered below) doesn't simply hash the key and message concatenated together — naive H(key ‖ message) is vulnerable to exactly the attack above: an attacker who knows H(key ‖ message) and its length can compute a valid H(key ‖ message ‖ extra) without ever learning the key. HMAC's nested double-hashing construction was specifically designed to close this gap, and it's why \"just concatenate and hash\" is one of the most common amateur cryptography mistakes.",
@@ -1158,6 +1169,17 @@ export const modules: Module[] = [
             { label: "Leaf certificate", detail: "example.com's certificate, signed by the intermediate CA." },
             { label: "Your browser verifies", detail: "It walks the chain leaf → intermediate → root, checking each signature until it reaches an already-trusted anchor." },
           ],
+        },
+      },
+      {
+        heading: "The chain, drawn out",
+        body: [
+          "Drawn as a straight line, issuance and verification run in opposite directions: each certificate is signed by the one to its right, and a browser checks the chain by walking back the other way, from the leaf toward an already-trusted root.",
+        ],
+        diagram: {
+          type: "pipeline",
+          steps: ["Leaf cert", "Intermediate", "Root CA"],
+          caption: "Signing runs leaf ← intermediate ← root; verification walks the same chain in reverse, leaf → intermediate → root, stopping the moment it reaches a trust anchor already installed in your browser or OS.",
         },
       },
       {
@@ -1473,6 +1495,22 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "X3DH, as messages crossing the wire",
+        body: [
+          "The same exchange, viewed as traffic rather than internal steps: Bob's half happens entirely before Alice's, with no live round trip between them — the server in the middle only ever relays already-published key material, never anything secret.",
+        ],
+        diagram: {
+          type: "swimlane",
+          leftActor: "Bob",
+          rightActor: "Alice",
+          messages: [
+            { from: "left", label: "key bundle published" },
+            { from: "right", label: "computes shared secret" },
+            { from: "right", label: "sends encrypted first msg" },
+          ],
+        },
+      },
+      {
         heading: "The Double Ratchet",
         body: [
           "After the initial key agreement, the Double Ratchet algorithm derives a new encryption key for every single message, combining a Diffie-Hellman ratchet (fresh key material exchanged periodically) with a symmetric-key ratchet (a one-way chain deriving each message key from the last). The result is forward secrecy at the level of individual messages — compromising one message's key doesn't expose earlier ones — plus post-compromise security: if an attacker briefly compromises a device's state, the ratchet's ongoing Diffie-Hellman exchanges eventually heal the session back to a secure state.",
@@ -1495,6 +1533,17 @@ export const modules: Module[] = [
               "Combined with the symmetric ratchet, gives both forward secrecy and post-compromise security",
             ],
           },
+        },
+      },
+      {
+        heading: "The symmetric-key ratchet, drawn out",
+        body: [
+          "Within a single Diffie-Hellman step, each message key comes from a one-way chain: every chain key derives that message's encryption key plus the next chain key, and the current chain key is discarded immediately after — so recovering a later chain key never lets you walk the chain backward to reconstruct earlier message keys.",
+        ],
+        diagram: {
+          type: "pipeline",
+          steps: ["Chain 0", "Chain 1", "Chain 2", "Chain 3"],
+          caption: "Each chain key derives that message's encryption key and the next chain key, then discards itself — a one-way chain that only ever runs forward.",
         },
       },
     ],
@@ -1654,6 +1703,11 @@ export const modules: Module[] = [
         body: [
           "Each block in a blockchain includes the cryptographic hash of the previous block's header. Changing anything in an earlier block changes its hash, which no longer matches what the next block recorded, which cascades forward through every subsequent block — making tampering with history computationally evident, not just inconvenient.",
         ],
+        diagram: {
+          type: "pipeline",
+          steps: ["Block 1", "Block 2", "Block 3", "Block 4"],
+          caption: "Each block's header embeds the hash of the block before it. Edit Block 2 after the fact, and its hash changes — so Block 3's stored pointer to it no longer matches, and the mismatch cascades all the way to the newest block.",
+        },
       },
       {
         heading: "Merkle trees",

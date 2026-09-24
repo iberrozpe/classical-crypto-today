@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getModule, modules, roleLabels } from "@/lib/content";
+import { playgroundTools } from "@/lib/playground";
 import Math from "@/components/Math";
 import DiagramRenderer from "@/components/diagrams/DiagramRenderer";
 
@@ -26,6 +27,7 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
 
   const currentIndex = modules.findIndex((m) => m.slug === slug);
   const next = modules[currentIndex + 1];
+  const relatedTools = playgroundTools.filter((t) => t.relatedModule === slug);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -69,6 +71,20 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
           </section>
         ))}
       </article>
+
+      {relatedTools.length > 0 && (
+        <div className="mt-16 rounded-lg border border-accent/40 bg-accent-soft p-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-accent">Try it yourself</p>
+          <div className="mt-3 space-y-3">
+            {relatedTools.map((t) => (
+              <Link key={t.slug} href={`/playground/${t.slug}`} className="block hover:text-accent">
+                <span className="text-lg font-semibold">{t.title} →</span>
+                <p className="text-sm text-muted">{t.summary}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {next && (
         <div className="mt-16 rounded-lg border border-border bg-surface p-6">
