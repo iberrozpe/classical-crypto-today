@@ -1552,7 +1552,7 @@ export const modules: Module[] = [
     title: "X.509 certificates & the PKI trust hierarchy",
     summary:
       "A certificate is just a signed statement binding a public key to an identity. Here's what's actually inside one, and how revocation works.",
-    minutes: 24,
+    minutes: 26,
     category: "Protocols",
     tags: ["architect", "itops", "grc", "developer"],
     sections: [
@@ -1604,6 +1604,16 @@ export const modules: Module[] = [
         heading: "Subject Alternative Names and wildcard certificates",
         body: [
           "A single certificate can cover far more than one hostname. Subject Alternative Names (SANs) let one certificate list many exact domains (example.com, www.example.com, api.example.com), while a wildcard certificate (CN=*.example.com) covers any single-level subdomain at once. Modern browsers ignore the legacy Subject/CN field for hostname matching entirely and check only the SAN list — a certificate without the right SAN entry fails validation even if the CN field looks correct.",
+          "\"Single-level\" is the precise, easy-to-miss detail here: a wildcard matches exactly one additional label to the left of the domain it's attached to — never zero labels (the bare domain itself) and never two or more (a deeper subdomain).",
+        ],
+        practice: [
+          {
+            prompt: "A certificate's only SAN entry is *.example.com. Which of these three hostnames does that wildcard NOT cover: example.com, shop.example.com, api.example.com?",
+            hint: "A wildcard matches exactly one label to the left of the domain — not the bare domain itself, and not a deeper, multi-label subdomain.",
+            placeholder: "hostname",
+            answer: "example.com",
+            explanation: "*.example.com matches any single subdomain label (shop.example.com, api.example.com, ...) but not the bare apex domain example.com itself — that would need its own separate SAN entry, which is why production certificates almost always list both \"example.com\" and \"*.example.com\" side by side.",
+          },
         ],
       },
       {
@@ -1781,7 +1791,7 @@ export const modules: Module[] = [
     title: "SSH: key exchange, host keys, and authentication",
     summary:
       "The protocol behind every remote login and git push combines the same primitives as TLS, arranged slightly differently.",
-    minutes: 10,
+    minutes: 13,
     category: "Protocols",
     tags: ["developer", "itops", "architect"],
     sections: [
@@ -1830,6 +1840,25 @@ export const modules: Module[] = [
           "Public-key authentication — where the client proves possession of a private key whose matching public key is listed in the server's authorized_keys — is the recommended alternative to password authentication. Modern SSH deployments increasingly default to Ed25519 keys (a specific, fast elliptic-curve signature scheme) over RSA, for smaller key size and simpler, more misuse-resistant implementation.",
         ],
       },
+      {
+        heading: "Just how much smaller: Ed25519 vs. RSA key size",
+        body: [
+          "\"Smaller key size\" is easy to state and worth actually computing once. An Ed25519 public key is a single compressed point on a 256-bit curve, stored raw as exactly 256 bits — 32 bytes. An RSA key offering comparable classical security (roughly 128-bit strength) needs a 3072-bit modulus, stored as 3072 ÷ 8 = 384 bytes — before even counting RSA's extra exponent and ASN.1 structure overhead.",
+          "That gap compounds every time a key is transmitted, stored in authorized_keys, or verified: a config file with hundreds of deployed keys, or a handshake that exchanges one per connection, moves roughly twelve times as much data for RSA as for Ed25519 at equivalent strength.",
+        ],
+        math: [
+          { expr: "\\text{Ed25519: } 256 \\text{ bits} = 32 \\text{ bytes} \\qquad \\text{RSA-3072: } 3072 \\text{ bits} = 384 \\text{ bytes}" },
+        ],
+        practice: [
+          {
+            prompt: "An organization has 4,000 servers, each storing one RSA-3072 host key (384 bytes) in its known_hosts-equivalent inventory. Switching every host key to Ed25519 (32 bytes each) would shrink that total storage by how many bytes?",
+            hint: "Find the per-key savings first (384 − 32), then multiply by the number of servers.",
+            placeholder: "bytes saved",
+            answer: "1408000",
+            explanation: "Per-key savings: 384 − 32 = 352 bytes. Across 4,000 servers: 352 × 4,000 = 1,408,000 bytes (about 1.4 MB) — a small absolute number here, but the same 12-fold ratio applies to every handshake's bandwidth and every signature-verification's CPU cost, which is why it matters far more at internet scale than in a single inventory file.",
+          },
+        ],
+      },
     ],
   },
   {
@@ -1837,7 +1866,7 @@ export const modules: Module[] = [
     title: "TLS in practice: how HTTPS puts it all together",
     summary:
       "Every padlock icon runs a coordinated handshake combining key exchange, certificates, symmetric encryption, and integrity checks — in under a round trip.",
-    minutes: 16,
+    minutes: 18,
     category: "Protocols",
     tags: ["developer", "architect", "itops", "grc", "curious", "researcher"],
     sections: [
@@ -1875,6 +1904,22 @@ export const modules: Module[] = [
           ],
           caption: "Everything after the server's first reply — including the rest of that same flight of messages — is already encrypted, which is why TLS 1.3 leaks less handshake metadata than TLS 1.2 did.",
         },
+      },
+      {
+        heading: "Reading a cipher suite name",
+        body: [
+          "A TLS cipher suite's name is a literal recipe, not an opaque label — every component covered elsewhere in this catalog is spelled out in order. Take TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: ECDHE is the key exchange (ephemeral elliptic-curve Diffie-Hellman, giving forward secrecy), RSA is the signature algorithm authenticating the server's certificate, AES_128_GCM is the symmetric cipher and mode protecting application data, and SHA256 is the hash function used in the handshake's HMAC and key-derivation steps.",
+          "Reading a suite name this way turns a wall of TLS configuration text into a checklist — anywhere the name says RSA key exchange (not ECDHE) or CBC (not GCM), that's a flag for the migration-checklist and comparison-table modules elsewhere in this catalog.",
+        ],
+        practice: [
+          {
+            prompt: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 — how many bits is the symmetric encryption key this suite uses for application data?",
+            hint: "The AES key size is spelled out directly in the suite name, between the cipher and the mode.",
+            placeholder: "bits",
+            answer: "256",
+            explanation: "AES_256_GCM names its own key size directly: 256 bits. The rest of the suite name decomposes the same way — ECDHE for key exchange, ECDSA for the certificate's signature algorithm, and SHA384 for the handshake's hash function.",
+          },
+        ],
       },
       {
         heading: "Every module in this catalog, working together",
@@ -2295,7 +2340,7 @@ export const personas: Persona[] = [
     tagline: "Obligations, inventory & evidence focus",
     pitch:
       "Auditors want a cryptographic bill of materials. Know which algorithms are in scope before you can attest to anything.",
-    firstWin: { label: "Map the algorithms you must inventory", slug: "tls-in-practice", minutes: 16 },
+    firstWin: { label: "Map the algorithms you must inventory", slug: "tls-in-practice", minutes: 18 },
     moduleSlugs: [
       "tls-in-practice",
       "key-sizes-and-security-levels",
@@ -2311,7 +2356,7 @@ export const personas: Persona[] = [
     tagline: "Implementation & protocol focus",
     pitch:
       "RSA, AES, ECDSA and SHA-2 are already in every library you import. Understand what they actually do before you touch a crypto API.",
-    firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 16 },
+    firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 18 },
     moduleSlugs: [
       "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
@@ -2355,7 +2400,7 @@ export const personas: Persona[] = [
     tagline: "Deploy & operate focus",
     pitch:
       "Certificates, cipher suites, key sizes — the settings you configure every day encode decades of cryptographic design. Know what they mean.",
-    firstWin: { label: "Understand what a cipher suite actually says", slug: "tls-in-practice", minutes: 16 },
+    firstWin: { label: "Understand what a cipher suite actually says", slug: "tls-in-practice", minutes: 18 },
     moduleSlugs: [
       "symmetric-key-aes",
       "stream-ciphers-chacha20",
@@ -2380,7 +2425,7 @@ export const personas: Persona[] = [
     tagline: "New to cryptography",
     pitch:
       "Your browser's padlock icon runs on math you use every day without seeing. Here's what's actually happening behind it.",
-    firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 16 },
+    firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 18 },
     moduleSlugs: [
       "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
