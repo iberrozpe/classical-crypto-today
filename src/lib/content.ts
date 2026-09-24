@@ -33,7 +33,10 @@ export type DiagramSpec =
     }
   | { type: "pipeline"; title?: string; steps: string[]; loopLabel?: string; caption?: string }
   | { type: "gcm" }
-  | { type: "oaep" };
+  | { type: "oaep" }
+  | { type: "cipher-wheel" }
+  | { type: "modular-clock"; modulus?: number; start?: number; add?: number }
+  | { type: "timeline"; title?: string; events: { date: string; label: string; detail?: string }[] };
 
 export interface Section {
   heading: string;
@@ -54,11 +57,106 @@ export interface Module {
 
 export const modules: Module[] = [
   {
+    slug: "history-and-purpose-of-cryptography",
+    title: "The history and purpose of cryptography",
+    summary:
+      "Before the math: what cryptography is actually trying to do, and the 2,500-year arms race between codemakers and codebreakers that got us here.",
+    minutes: 20,
+    category: "Foundations",
+    tags: ["executive", "grc", "developer", "architect", "researcher", "curious"],
+    sections: [
+      {
+        heading: "What cryptography is actually for",
+        body: [
+          "Every technique in this catalog — no matter how modern or mathematical — exists to deliver some combination of four properties. Losing sight of these is how organizations end up encrypting data that also needed to be signed, or signing data that also needed to stay secret.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "The four properties cryptography provides",
+          blocks: [
+            { label: "Confidentiality", detail: "Only the intended recipient can read the data. Delivered by encryption — AES, RSA, ECC." },
+            { label: "Integrity", detail: "Any tampering is detectable. Delivered by hash functions and authenticated encryption (GCM, HMAC)." },
+            { label: "Authenticity", detail: "The data really came from who it claims to. Delivered by digital signatures (RSA, ECDSA) and MACs." },
+            { label: "Non-repudiation", detail: "The sender can't later deny having sent it. Delivered by digital signatures specifically — a MAC alone can't provide this, since the verifier could have forged it too." },
+          ],
+        },
+      },
+      {
+        heading: "2,500 years, in one timeline",
+        body: [
+          "The rest of this module walks through this arc in more detail — but the shape of the whole story is visible at a glance: millennia of clever secret-keeping followed by a few decades of applied mathematics that changed the rules entirely.",
+        ],
+        diagram: {
+          type: "timeline",
+          events: [
+            { date: "c. 500 BCE", label: "The scytale", detail: "A strip of parchment wrapped around a rod of a specific diameter — Spartan military transposition, the earliest cipher device known to survive in description." },
+            { date: "c. 50 BCE", label: "The Caesar cipher", detail: "Julius Caesar reportedly shifted every letter by three positions to protect military messages — the archetype of a substitution cipher." },
+            { date: "c. 850 CE", label: "Al-Kindi's frequency analysis", detail: "The first documented method for breaking a substitution cipher, in \"A Manuscript on Deciphering Cryptographic Messages.\"" },
+            { date: "1553", label: "Bellaso's polyalphabetic cipher", detail: "Later misattributed to Blaise de Vigenère, and believed unbreakable for three centuries." },
+            { date: "1918", label: "Enigma patented", detail: "Arthur Scherbius's rotor cipher machine, later adopted by the German military." },
+            { date: "1932–1945", label: "Enigma broken", detail: "First by Polish cryptologists, then at industrial scale at Bletchley Park — work that helped birth programmable computing." },
+            { date: "1949", label: "Shannon's theory of secrecy", detail: "Claude Shannon's \"Communication Theory of Secrecy Systems\" turned cryptography from a craft into a mathematical discipline." },
+            { date: "1976–1977", label: "Public-key cryptography and DES", detail: "Diffie-Hellman, RSA, and the Data Encryption Standard — the direct ancestors of everything else in this catalog." },
+            { date: "2001", label: "AES selected", detail: "NIST's public competition replaces DES with the symmetric standard still in use today." },
+            { date: "Today", label: "The post-quantum migration", detail: "The reason this site exists: the algorithms from 1976–77 onward are now being replaced." },
+          ],
+        },
+      },
+      {
+        heading: "Ancient beginnings: hiding messages, not meanings",
+        body: [
+          "The earliest ciphers didn't hide that a message existed — they hid what it said, using methods simple enough to execute by hand in the field. The scytale rearranged letters (transposition); the Caesar cipher replaced each letter with another (substitution). Both assumed the method itself, not just a key, needed to stay secret — an assumption that held only as long as nobody studied the method carefully.",
+        ],
+        diagram: { type: "cipher-wheel" },
+      },
+      {
+        heading: "The first cryptanalysis: Al-Kindi and frequency analysis",
+        body: [
+          "Around 850 CE, the Arab polymath Al-Kindi wrote the oldest surviving manuscript on breaking ciphers. His insight was statistical: in any given language, some letters occur far more often than others (E, in English), so a simple substitution cipher preserves those frequencies — count the letters in the ciphertext, match the most common one to the language's most common letter, and the rest unravels.",
+          "This is the moment cryptography stopped being purely a craft of clever concealment and became a contest with a countermeasure — every cipher design from this point on had to survive someone actively trying to break it, not just someone who happened not to notice it.",
+        ],
+      },
+      {
+        heading: "300 years of \"le chiffre indéchiffrable\"",
+        body: [
+          "The response to frequency analysis was to stop using one substitution and use many: a polyalphabetic cipher that shifts by a different amount for each letter, following a repeating keyword, so no single letter frequency stays fixed. This scheme was first described by Giovan Battista Bellaso in 1553 — though it's almost universally known today as the Vigenère cipher, after Blaise de Vigenère, who in 1586 published a related but different autokey cipher and was credited with Bellaso's work by a 19th-century historian's mistake.",
+          "Whoever gets the credit, the cipher earned its nickname \"le chiffre indéchiffrable\" (the indecipherable cipher) and held that reputation for roughly three centuries. Charles Babbage privately broke it around 1854 using a technique based on finding repeated sequences in the ciphertext to estimate the keyword's length, but never published the result; Friedrich Kasiski independently rediscovered and published the same method in 1863, and the cipher's reputation never recovered.",
+        ],
+      },
+      {
+        heading: "Mechanizing the arms race: rotor machines and Enigma",
+        body: [
+          "By the early 20th century, encrypting by hand couldn't keep pace with the volume of military and diplomatic traffic. Arthur Scherbius patented the Enigma machine in 1918 — a typewriter-like device using rotating wired disks (rotors) to implement a substitution cipher that changed with every keystroke, reaching a huge number of possible configurations.",
+          "Enigma was first broken not by the famous Bletchley Park effort but earlier, by Polish cryptologists (Marian Rejewski and colleagues) in the early 1930s, who reconstructed its internal wiring mathematically. Their work was passed to Britain shortly before WWII, where a team at Bletchley Park — including Alan Turing — industrialized codebreaking at a scale that, as a side effect, helped establish the foundations of programmable computing.",
+        ],
+      },
+      {
+        heading: "Putting cryptography on a mathematical footing: Shannon",
+        body: [
+          "In 1949, Claude Shannon published \"Communication Theory of Secrecy Systems,\" applying the information theory he'd developed to formally define what a cipher can and can't guarantee. Shannon proved that a one-time pad — a key as long as the message, truly random, used exactly once — achieves perfect secrecy: a ciphertext that reveals mathematically zero information about the plaintext, regardless of an attacker's computing power.",
+          "This is a genuinely different kind of security guarantee from everything else in this catalog. AES, RSA, and ECC are all only computationally secure — breakable in principle given enough computing power, just not in any practical amount of time. Shannon's work drew that distinction precisely, and gave cryptography its first rigorous mathematical foundation.",
+        ],
+      },
+      {
+        heading: "The 1970s revolution: the ancestors of everything in this catalog",
+        body: [
+          "Within about a year of each other, two developments ended the era covered by this module and started the one covered by the rest of the site. In 1977, the U.S. government standardized DES (the Data Encryption Standard) as the first publicly available, thoroughly analyzed symmetric cipher — the direct ancestor of AES. And in 1976–1977, Diffie, Hellman, Rivest, Shamir, and Adleman published the key exchange and encryption schemes covered in the Diffie-Hellman and RSA modules, solving the key-distribution problem that had limited cryptography for 2,500 years: two parties with no prior shared secret, communicating over a channel an adversary can watch, could now agree on one anyway.",
+        ],
+      },
+      {
+        heading: "Where this leaves us",
+        body: [
+          "Everything covered elsewhere in this catalog — AES, RSA, ECC, hashing, TLS — descends directly from that 1970s pivot. It's exactly what this site calls \"classical\" cryptography: not ancient, but the specific body of algorithms built between 1976 and roughly 2015, before the prospect of large-scale quantum computers put RSA and ECC's underlying hard problems at risk. The rest of this catalog is a tour of what that classical era actually built, and how it works.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "math-foundations-modular-arithmetic",
     title: "The math underneath: modular arithmetic & one-way functions",
     summary:
       "Every public-key algorithm in this catalog leans on the same idea: a calculation that's easy in one direction and effectively impossible to undo in the other.",
-    minutes: 10,
+    minutes: 22,
     category: "Foundations",
     tags: ["developer", "researcher", "curious"],
     sections: [
@@ -69,7 +167,7 @@ export const modules: Module[] = [
         ],
       },
       {
-        heading: "Modular arithmetic in one paragraph",
+        heading: "Modular arithmetic: arithmetic that wraps around",
         body: [
           "Modular arithmetic is arithmetic that wraps around, the way a clock wraps from 12 back to 1. \"7 mod 5\" means: divide 7 by 5 and keep the remainder — 2. Cryptography works almost entirely inside these wrapped, finite number systems (rather than the infinite integers) because they have exactly the algebraic structure needed: every operation stays inside a fixed, finite set of possible values, which is what makes both the 'easy direction' and the 'hard direction' well-defined and analyzable.",
         ],
@@ -78,6 +176,26 @@ export const modules: Module[] = [
             expr: "a \\equiv b \\pmod{n} \\iff n \\mid (a-b)",
             caption: "a and b are \"congruent mod n\" whenever n divides their difference — e.g. 7 ≡ 2 (mod 5).",
           },
+        ],
+        diagram: { type: "modular-clock" },
+      },
+      {
+        heading: "The rules: addition, multiplication, and inverses mod n",
+        body: [
+          "Ordinary addition and multiplication both work fine mod n — you just reduce the result back into range afterward: (a + b) mod n and (a × b) mod n both stay inside {0, 1, ..., n−1}, no matter how large a and b started out. This closure property is what makes it possible to do enormous exponentiations (as in RSA and Diffie-Hellman) without the numbers ever growing unmanageably large — every intermediate result gets folded back into the same fixed-size range.",
+          "Division is trickier: instead of dividing by a, you multiply by a's modular inverse — a number a⁻¹ such that a × a⁻¹ ≡ 1 (mod n). That inverse exists only when a and n share no common factors (gcd(a, n) = 1), and when it does exist, the extended Euclidean algorithm finds it efficiently. This is exactly the computation the RSA module uses to derive the private exponent d from the public exponent e.",
+        ],
+        math: [
+          {
+            expr: "a \\cdot a^{-1} \\equiv 1 \\pmod{n} \\quad \\text{exists} \\iff \\gcd(a, n) = 1",
+          },
+        ],
+      },
+      {
+        heading: "Groups: the abstract structure underneath everything",
+        body: [
+          "Strip away the specific numbers, and modular arithmetic mod a prime p, the integers under ordinary addition, and the points on an elliptic curve all share the same abstract shape: a set of elements, one operation for combining them, an identity element that does nothing, and every element has an inverse. Mathematicians call any structure with these properties a group.",
+          "This abstraction is what lets completely different-looking systems run the identical algorithm. Diffie-Hellman's \"raise g to a power mod p\" and ECC's \"add a curve point to itself k times\" are the same group-theoretic operation — repeated combination of an element with itself — performed in two different groups. Learn the operation once, in the abstract, and it explains both modules at once.",
         ],
       },
       {
@@ -104,6 +222,28 @@ export const modules: Module[] = [
             ],
           },
         },
+      },
+      {
+        heading: "Three one-way functions, one idea",
+        body: [
+          "Every public-key module in this catalog is a variation on the same theme: pick a one-way function, build a key pair around it. The specific hard problem changes; the shape of the argument doesn't.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "The same idea, three ways",
+          blocks: [
+            { label: "Integer factorization (RSA)", detail: "Easy: multiply two large primes. Hard: recover the primes from their product." },
+            { label: "Discrete logarithm mod p (Diffie-Hellman)", detail: "Easy: compute gᵃ mod p. Hard: recover a from gᵃ mod p." },
+            { label: "Elliptic curve discrete logarithm (ECC)", detail: "Easy: compute k·G on a curve. Hard: recover k from k·G." },
+          ],
+        },
+      },
+      {
+        heading: "Why \"hard\" means computationally hard, not impossible",
+        body: [
+          "None of these problems are impossible in a mathematical sense — given unlimited time, trying every possible private key eventually finds the right one. \"Hard\" here means the best known algorithm still takes longer than is practically useful, even on the fastest computers available. RSA's factoring problem has a sub-exponential classical algorithm (the General Number Field Sieve, covered in the RSA module); the elliptic curve discrete logarithm has no known algorithm even that fast, which is exactly why ECC reaches equivalent security with dramatically smaller keys.",
+          "This distinction — computationally hard rather than mathematically impossible — is also precisely what a large enough quantum computer would change. Shor's algorithm, covered in the quantum threat module, doesn't find a flaw in the math; it's simply a faster algorithm for the same two problems (factoring and discrete logarithms) that happens to only run on hardware that doesn't yet exist at the necessary scale.",
+        ],
       },
     ],
   },
@@ -1660,6 +1800,7 @@ export const personas: Persona[] = [
       "Your board is asking about the PQC migration. Before you can answer, you need to know what \"classic\" crypto your organisation actually depends on today.",
     firstWin: { label: "See what's actually at risk", slug: "key-sizes-and-security-levels", minutes: 10 },
     moduleSlugs: [
+      "history-and-purpose-of-cryptography",
       "key-sizes-and-security-levels",
       "rsa-public-key",
       "quantum-threat-shor",
@@ -1690,6 +1831,7 @@ export const personas: Persona[] = [
       "RSA, AES, ECDSA and SHA-2 are already in every library you import. Understand what they actually do before you touch a crypto API.",
     firstWin: { label: "See a real handshake, step by step", slug: "tls-in-practice", minutes: 16 },
     moduleSlugs: [
+      "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
       "symmetric-key-aes",
       "stream-ciphers-chacha20",
@@ -1747,7 +1889,7 @@ export const personas: Persona[] = [
     label: "Researcher / Academic",
     tagline: "Comprehensive, no filtering",
     pitch: "Open the full catalog. Every module, in order, with no persona filtering.",
-    firstWin: { label: "Start at the foundations", slug: "math-foundations-modular-arithmetic", minutes: 10 },
+    firstWin: { label: "Start at the very beginning", slug: "history-and-purpose-of-cryptography", minutes: 20 },
     moduleSlugs: modules.map((m) => m.slug),
   },
   {
@@ -1758,6 +1900,7 @@ export const personas: Persona[] = [
       "Your browser's padlock icon runs on math you use every day without seeing. Here's what's actually happening behind it.",
     firstWin: { label: "What happens when you visit a website", slug: "tls-in-practice", minutes: 16 },
     moduleSlugs: [
+      "history-and-purpose-of-cryptography",
       "math-foundations-modular-arithmetic",
       "symmetric-key-aes",
       "rsa-public-key",

@@ -9,6 +9,9 @@ import SwimlaneDiagram from "./SwimlaneDiagram";
 import PipelineDiagram from "./PipelineDiagram";
 import GcmDiagram from "./GcmDiagram";
 import OaepDiagram from "./OaepDiagram";
+import CipherWheelDiagram from "./CipherWheelDiagram";
+import ModularClockDiagram from "./ModularClockDiagram";
+import TimelineDiagram from "./TimelineDiagram";
 
 export default function DiagramRenderer({ diagram }: { diagram: DiagramSpec }) {
   switch (diagram.type) {
@@ -47,5 +50,11 @@ export default function DiagramRenderer({ diagram }: { diagram: DiagramSpec }) {
       return <GcmDiagram />;
     case "oaep":
       return <OaepDiagram />;
+    case "cipher-wheel":
+      return <CipherWheelDiagram />;
+    case "modular-clock":
+      return <ModularClockDiagram modulus={diagram.modulus} start={diagram.start} add={diagram.add} />;
+    case "timeline":
+      return <TimelineDiagram title={diagram.title} events={diagram.events} />;
   }
 }
