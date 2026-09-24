@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getPlaygroundTool, playgroundTools } from "@/lib/playground";
 import { getModule } from "@/lib/content";
+import { getUseCase } from "@/lib/usecases";
 import Math from "@/components/Math";
 import DiagramRenderer from "@/components/diagrams/DiagramRenderer";
 
@@ -28,6 +29,9 @@ export default async function HowItWorksPage(props: PageProps<"/playground/[slug
   if (!tool) notFound();
 
   const related = tool.relatedModule ? getModule(tool.relatedModule) : undefined;
+  const relatedUseCases = (tool.relatedUseCases ?? [])
+    .map((s) => getUseCase(s))
+    .filter((u) => u !== undefined);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -61,6 +65,17 @@ export default async function HowItWorksPage(props: PageProps<"/playground/[slug
             </Link>
           </>
         )}
+        {relatedUseCases.map((u) => (
+          <span key={u.slug} className="flex items-center gap-3">
+            <span className="text-sm text-muted">·</span>
+            <Link
+              href={`/use-cases/${u.slug}`}
+              className="text-sm font-medium text-accent underline underline-offset-4"
+            >
+              See the {u.title} use case →
+            </Link>
+          </span>
+        ))}
       </div>
 
       <article className="mt-12 space-y-10">

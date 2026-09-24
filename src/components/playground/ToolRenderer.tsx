@@ -10,6 +10,9 @@ import JwtTool from "./JwtTool";
 import Pbkdf2Tool from "./Pbkdf2Tool";
 import CertChainTool from "./CertChainTool";
 import X3dhTool from "./X3dhTool";
+import TlsKeyScheduleTool from "./TlsKeyScheduleTool";
+import EnvelopeEncryptionTool from "./EnvelopeEncryptionTool";
+import CertRevocationTool from "./CertRevocationTool";
 
 const toolComponents: Record<string, React.ComponentType> = {
   "aes-gcm": AesGcmTool,
@@ -22,6 +25,9 @@ const toolComponents: Record<string, React.ComponentType> = {
   pbkdf2: Pbkdf2Tool,
   "cert-chain": CertChainTool,
   x3dh: X3dhTool,
+  "tls-key-schedule": TlsKeyScheduleTool,
+  "envelope-encryption": EnvelopeEncryptionTool,
+  "cert-revocation": CertRevocationTool,
 };
 
 export default function ToolRenderer({ slug }: { slug: string }) {

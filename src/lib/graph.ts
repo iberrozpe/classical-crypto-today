@@ -52,6 +52,9 @@ export function buildGraph(): { nodes: GraphNode[]; links: GraphLink[] } {
     if (t.relatedModule) {
       links.push({ source: `module:${t.relatedModule}`, target: `tool:${t.slug}` });
     }
+    for (const relatedUseCase of t.relatedUseCases ?? []) {
+      links.push({ source: `usecase:${relatedUseCase}`, target: `tool:${t.slug}` });
+    }
   }
 
   for (const u of useCases) {

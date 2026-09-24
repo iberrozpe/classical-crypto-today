@@ -5,6 +5,7 @@ export interface PlaygroundTool {
   title: string;
   summary: string;
   relatedModule?: string;
+  relatedUseCases?: string[];
   category: "Symmetric-key" | "Public-key" | "Foundations" | "Protocols";
   howItWorks: Section[];
 }
@@ -301,6 +302,51 @@ export const playgroundTools: PlaygroundTool[] = [
     ],
   },
   {
+    slug: "tls-key-schedule",
+    title: "TLS 1.3 key schedule: from ECDH to a traffic key",
+    summary:
+      "Run a real ECDH exchange, feed it through real HKDF bound to a transcript hash, and use the result to AES-GCM-encrypt a record — the exact chain TLS 1.3 runs on every connection.",
+    relatedModule: "tls-in-practice",
+    category: "Protocols",
+    howItWorks: [
+      {
+        heading: "The same ECDH exchange, applied to a specific purpose",
+        body: [
+          "\"Run handshake\" starts exactly like the ECDH tool: independent P-256 key pairs for Client and Server, each deriving the identical shared secret via scalar multiplication. What's different here is everything that happens to that shared secret afterward — TLS 1.3 never uses a raw ECDH output as an encryption key directly.",
+        ],
+      },
+      {
+        heading: "Binding the secret to this exact handshake, via HKDF",
+        body: [
+          "The shared secret is imported as HKDF input key material and run through crypto.subtle.deriveKey with the HKDF algorithm — real HKDF (RFC 5869), the same construction the key derivation functions module covers, not a simulation. Its info parameter carries a hash of this simulated handshake's own transcript (a running SHA-256 over the Hello messages both sides just exchanged), which is what cryptographically ties the resulting key to this specific connection — reusing the identical shared secret in a different handshake, with a different transcript, would derive a completely different key.",
+        ],
+        math: [
+          {
+            expr: "\\text{traffic key} = \\mathrm{HKDF}(\\text{salt} = \\varnothing,\\ \\text{IKM} = \\text{ECDH secret},\\ \\text{info} = H(\\text{transcript}))",
+          },
+        ],
+      },
+      {
+        heading: "Extract, then Expand",
+        body: [
+          "HKDF is two stages folded into one Web Crypto call: Extract pools the shared secret's entropy into a fixed-size pseudorandom key, and Expand stretches that into an output of exactly the length requested — 256 bits here, sized for the AES-GCM key it becomes. Real TLS 1.3 runs this same two-stage process several times over the course of a handshake (early, handshake, and application traffic secrets, each further split into client-write and server-write keys); this tool collapses that down to one derivation to keep the core mechanism visible.",
+        ],
+      },
+      {
+        heading: "The derived key encrypts a real record",
+        body: [
+          "\"Encrypt application data\" takes the HKDF output directly as an AES-256-GCM key — no separate key-generation step — and encrypts your message exactly as the AES-GCM tool does: a random IV, ciphertext, and a 16-byte authentication tag.",
+        ],
+      },
+      {
+        heading: "Why the server lands on the identical key, independently",
+        body: [
+          "\"Server derives & decrypts\" runs the mirrored computation: the server's own ECDH scalar multiplication (landing on the same point, since ECDH is commutative), the same transcript hash (both sides hashed the identical exchanged messages), and the identical HKDF call — producing a bit-for-bit identical traffic key with no key ever having crossed the wire. That's the entire trick: everything two sides need to agree on a key is either public (the transcript) or independently derivable (the shared secret), never transmitted.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "jwt",
     title: "JWT builder & decoder",
     summary:
@@ -377,6 +423,49 @@ export const playgroundTools: PlaygroundTool[] = [
     ],
   },
   {
+    slug: "envelope-encryption",
+    title: "Envelope encryption & key wrapping",
+    summary:
+      "Generate a real KMS-style KEK, wrap a fresh DEK with it via RSA-OAEP, encrypt data locally, then unwrap and decrypt — plus a second panel wrapping a key with real AES Key Wrap (RFC 3394).",
+    relatedModule: "symmetric-key-aes",
+    relatedUseCases: ["kms-envelope-encryption", "kms-key-wrapping-and-exchange"],
+    category: "Public-key",
+    howItWorks: [
+      {
+        heading: "Two keys, generated for two different jobs",
+        body: [
+          "\"Generate KEK\" creates a real 2048-bit RSA-OAEP key pair, marked wrapKey/unwrapKey only — standing in for a KMS's master key. \"Generate DEK\" creates a real AES-256-GCM key, marked extractable, standing in for the fast, local, per-object data key the envelope-encryption use case describes.",
+        ],
+      },
+      {
+        heading: "Wrapping: one Web Crypto call, not a manual RSA step",
+        body: [
+          "\"Wrap DEK\" calls crypto.subtle.wrapKey directly — it exports the DEK's raw bytes and RSA-OAEP-encrypts them in a single atomic operation, so the DEK's plaintext bytes never separately exist in a variable your own code could accidentally log or leak. The result is exactly the size the RSA & public-key module's arithmetic predicts: a 2048-bit modulus produces a 256-byte wrapped output, regardless of the 256-bit DEK's own size.",
+        ],
+        math: [{ expr: "|\\text{wrapped DEK}| = \\frac{2048}{8} = 256 \\text{ bytes}" }],
+      },
+      {
+        heading: "Encrypting data locally, and unwrapping to read it back",
+        body: [
+          "\"Encrypt\" runs ordinary AES-256-GCM with the plaintext DEK, exactly like the AES-GCM tool. \"Unwrap & decrypt\" reverses the whole path: crypto.subtle.unwrapKey RSA-OAEP-decrypts the wrapped bytes and reconstructs a usable AES-GCM CryptoKey in one step, which then decrypts the stored ciphertext — the KMS-equivalent key (the KEK) never touches the actual data at any point.",
+        ],
+      },
+      {
+        heading: "What tampering the wrapped DEK actually breaks",
+        body: [
+          "\"Tamper with wrapped DEK\" flips one byte of the wrapped bytes before unwrapping. RSA-OAEP's own structural checks (covered in the RSA-OAEP tool) fail on the corrupted decryption output, and unwrapKey throws outright — there's no partial or garbled key recovered, just a clean failure.",
+        ],
+      },
+      {
+        heading: "The symmetric alternative: AES Key Wrap",
+        body: [
+          "The second panel wraps the same kind of AES key using AES-KW (RFC 3394) instead of RSA-OAEP — a completely different Web Crypto algorithm, requiring a shared symmetric wrapping key rather than a public/private pair. Watch the byte count: a 256-bit (32-byte) key wrapped this way always comes out exactly 40 bytes, the fixed 8-byte integrity-check overhead the key-wrapping use case describes, verified live rather than just asserted.",
+        ],
+        math: [{ expr: "|\\text{AES-KW output}| = 32 + 8 = 40 \\text{ bytes, always}" }],
+      },
+    ],
+  },
+  {
     slug: "cert-chain",
     title: "Certificate chain builder",
     summary:
@@ -411,6 +500,52 @@ export const playgroundTools: PlaygroundTool[] = [
         heading: "Why tampering the subject breaks verification",
         body: [
           "The signature is computed over the exact bytes of {subject, issuer, publicKey} at issuance time. \"Tamper with the leaf's subject\" edits that field afterward without re-signing — so verification recomputes what the signature should cover, gets a different result than what was actually signed, and rejects it. This is the identical hash-then-sign tamper-evidence property covered in the hashing and signatures module, applied to a certificate instead of a message.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "cert-revocation",
+    title: "Certificate revocation: valid signature, still not trusted",
+    summary:
+      "Build the same real three-link ECDSA chain as the certificate chain builder, then revoke the intermediate and watch a mathematically perfect signature still get rejected.",
+    relatedModule: "digital-certificates-x509",
+    relatedUseCases: ["pki-in-production"],
+    category: "Public-key",
+    howItWorks: [
+      {
+        heading: "Two separate checks, easy to conflate",
+        body: [
+          "This tool builds the identical real ECDSA root → intermediate → leaf chain as the certificate chain builder — nothing about the key generation or signing changes. What's added is a second, entirely non-cryptographic check that real verification always runs alongside the mathematical one: is every certificate in this chain still supposed to be trusted, independent of whether its signature checks out?",
+        ],
+      },
+      {
+        heading: "What \"Revoke\" actually does here — and doesn't",
+        body: [
+          "Clicking \"Revoke intermediate\" doesn't touch a single key or signature. It adds the intermediate's identifier to a revocation list held only in this tool's local state — the same role a real CRL or OCSP responder plays. The intermediate's signature over the leaf is exactly as mathematically valid after revocation as before; revocation is a statement about trust, layered on top of, not baked into, the signature math.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "Signature check",
+            points: [
+              "Purely mathematical — did the claimed issuer's private key produce this exact signature?",
+              "Unaffected by revocation — a revoked cert's old signatures remain mathematically valid forever",
+            ],
+          },
+          right: {
+            title: "Revocation check",
+            points: [
+              "An operational lookup — is this certificate (or one above it in the chain) on a revocation list?",
+              "The only thing that changes when you click Revoke — no keys or signatures are touched",
+            ],
+          },
+        },
+      },
+      {
+        heading: "Why revoking the intermediate — not the leaf — still blocks everything under it",
+        body: [
+          "\"Verify chain\" runs the signature checks first (they still pass — nothing was tampered), then separately walks every certificate in the chain against the revocation list. Revoking the intermediate fails that second check for the leaf too, even though the leaf itself was never directly revoked: trust doesn't survive a revoked link anywhere above it in the chain. This is exactly the blast-radius containment the PKI-in-production use case describes — revoking one compromised intermediate immediately untrusts everything it ever issued, without needing to touch the root or re-issue anything at the root level.",
         ],
       },
     ],
