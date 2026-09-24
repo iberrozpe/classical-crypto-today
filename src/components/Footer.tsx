@@ -6,7 +6,10 @@ export default function Footer() {
           Classical Crypto Today — an educational reference for the cryptography running the
           internet right now (RSA, ECC, AES, TLS) and why it&apos;s being replaced.
         </p>
-        <p className="mt-2">MVP build · content expands over time.</p>
+        <p className="mt-2">
+          Every Playground tool runs on your browser&apos;s own Web Crypto API — nothing simulated,
+          nothing sent to a server.
+        </p>
       </div>
     </footer>
   );
