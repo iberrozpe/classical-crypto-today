@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/migration-checklist",
     "/assess",
     "/about",
+    "/changelog",
   ].map((path) => ({
     url: `${siteUrl}${path}`,
     changeFrequency: "weekly" as const,
