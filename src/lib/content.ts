@@ -2153,7 +2153,7 @@ export const modules: Module[] = [
     title: "Side-channel & timing attacks: when the math is fine but the implementation isn't",
     summary:
       "A cryptographic algorithm can be mathematically unbreakable and still leak its secret key through how long it takes to run.",
-    minutes: 11,
+    minutes: 13,
     category: "Practice",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -2191,6 +2191,25 @@ export const modules: Module[] = [
           "The general defense is constant-time programming: writing cryptographic code so its execution time, memory access pattern, and power draw never depend on secret data — no data-dependent branches, no data-dependent array indexing. This is precisely why cryptography guidelines insist on vetted libraries over custom implementations: constant-time discipline is easy to state and notoriously easy to violate by accident.",
         ],
       },
+      {
+        heading: "Why these attacks need thousands of measurements",
+        body: [
+          "A real timing leak is almost never a clean, single measurement — network jitter and OS scheduling noise usually dwarf the microsecond-scale signal an attacker is after. The fix is statistical: averaging N independent measurements shrinks random noise by a factor of √N while the real signal stays put, so the number of samples needed to pull a signal out of noise scales with the square of their ratio.",
+          "Worked example: a 2-microsecond timing signal buried in 100 microseconds of network noise needs N = (100/2)² = 2,500 measurements averaged together before the signal reliably separates from the noise — which is exactly why real timing attacks like Lucky Thirteen require sending the same crafted request thousands of times, not once.",
+        ],
+        math: [
+          { expr: "N \\geq \\left(\\frac{\\text{noise}}{\\text{signal}}\\right)^2" },
+        ],
+        practice: [
+          {
+            prompt: "A padding-oracle timing signal is 3 microseconds, buried in 60 microseconds of network noise. About how many measurements need to be averaged to reliably detect it?",
+            hint: "Use N ≥ (noise ÷ signal)², then square the ratio.",
+            placeholder: "measurements",
+            answer: "400",
+            explanation: "60 ÷ 3 = 20, and 20² = 400 measurements. A cleaner network (less noise) or a larger timing difference (a sloppier padding check) both directly reduce how many requests an attacker needs — which is exactly the lever constant-time code removes entirely, by making the signal itself zero.",
+          },
+        ],
+      },
     ],
   },
   {
@@ -2198,7 +2217,7 @@ export const modules: Module[] = [
     title: "Cryptography inside blockchains: hashing, Merkle trees, and signatures",
     summary:
       "Bitcoin and Ethereum don't invent new cryptography — they compose the same primitives in this catalog into a specific, tamper-evident structure.",
-    minutes: 12,
+    minutes: 14,
     category: "Practice",
     tags: ["developer", "curious", "researcher"],
     sections: [
@@ -2217,8 +2236,21 @@ export const modules: Module[] = [
         heading: "Merkle trees",
         body: [
           "Rather than hashing an entire block's transaction list as one blob, transactions are organized into a Merkle tree: pairs of transaction hashes are hashed together, then pairs of those results, repeatedly, up to a single root hash stored in the block header. This lets a client prove a specific transaction is included in a block by presenting only a small path of hashes (a Merkle proof) rather than downloading every transaction in the block.",
+          "That proof's size is exactly the tree's height, and because the tree doubles in width at every level, the height grows only logarithmically with the number of transactions — the whole reason Merkle proofs stay small even for enormous blocks.",
         ],
         diagram: { type: "merkle" },
+        math: [
+          { expr: "\\text{Merkle proof length} = \\log_2(\\text{number of transactions})" },
+        ],
+        practice: [
+          {
+            prompt: "A block contains 1,048,576 transactions organized into a Merkle tree. How many sibling hashes does a Merkle proof need to prove one specific transaction is included?",
+            hint: "1,048,576 is a power of 2. Find the exponent — that's the tree's height, and the proof length.",
+            placeholder: "hashes",
+            answer: "20",
+            explanation: "1,048,576 = 2²⁰, so the tree is 20 levels deep, and a Merkle proof needs exactly 20 sibling hashes — one per level — regardless of which of the million-plus transactions is being proven. Doubling the transaction count to roughly 2 million adds only one more hash to every proof.",
+          },
+        ],
       },
       {
         heading: "ECDSA and self-custody",
@@ -2245,7 +2277,7 @@ export const modules: Module[] = [
     title: "Why quantum computers break this: Shor's algorithm",
     summary:
       "The bridge module: why everything above is called \"classical\" cryptography, and exactly what a future quantum computer would do to it.",
-    minutes: 11,
+    minutes: 13,
     category: "Foundations",
     tags: ["executive", "developer", "architect", "researcher", "curious"],
     sections: [
@@ -2267,6 +2299,15 @@ export const modules: Module[] = [
         body: [
           "Breaking RSA-2048 with Shor's algorithm is estimated to require several thousand logical (fully error-corrected) qubits — which, given current error rates, could require millions of physical qubits once error correction overhead is included. Today's largest quantum computers have on the order of hundreds to low thousands of physical, noisy qubits. No quantum computer today can run Shor's algorithm against real-world key sizes.",
           "That gap doesn't mean the risk is purely theoretical for now, though — see the next module on why data encrypted today can already be at risk.",
+        ],
+        practice: [
+          {
+            prompt: "A published estimate puts RSA-2048's break at roughly 4,000 logical qubits, with error correction needing about 1,000 physical qubits per logical qubit. Roughly how many physical qubits does that estimate imply in total?",
+            hint: "Multiply the logical qubit count by the physical-qubits-per-logical-qubit overhead.",
+            placeholder: "physical qubits",
+            answer: "4000000",
+            explanation: "4,000 × 1,000 = 4,000,000 physical qubits — millions, exactly matching the order of magnitude cited above, and vastly beyond the hundreds-to-low-thousands of noisy physical qubits today's largest quantum computers actually have.",
+          },
         ],
       },
       {
@@ -2304,7 +2345,7 @@ export const modules: Module[] = [
     title: "Harvest now, decrypt later: the risk that's already here",
     summary:
       "You don't need a working quantum computer today to be at risk today. Anything encrypted now with RSA or ECC can simply be recorded and decrypted later.",
-    minutes: 9,
+    minutes: 12,
     category: "Practice",
     tags: ["executive", "grc", "architect", "researcher"],
     sections: [
@@ -2334,6 +2375,25 @@ export const modules: Module[] = [
         heading: "Why this drives migration timing, not just eventual planning",
         body: [
           "This is the practical argument organizations use for starting PQC migration — specifically hybrid key exchange, combining a classical algorithm like ECDH with a post-quantum algorithm like ML-KEM in the same handshake — well before a quantum computer capable of Shor's algorithm exists, rather than waiting for one to appear. Data harvested today under purely classical protection is already, in effect, on a countdown.",
+        ],
+      },
+      {
+        heading: "Mosca's theorem: turning urgency into a number",
+        body: [
+          "Cybersecurity researcher Michele Mosca gave this urgency a simple inequality. Call X the number of years your data must stay confidential, Y the number of years your migration to PQC will take, and Z the number of years until a cryptographically relevant quantum computer exists. If X + Y > Z, you're already too late — the migration won't finish before the data's required confidentiality window collides with a capable quantum computer, even though that computer doesn't exist yet today.",
+          "Worked example: data that must stay secret for 10 more years (X = 10), a migration estimated to take 5 years (Y = 5), and a quantum computer not expected for 20 years (Z = 20). X + Y = 15, which is less than Z = 20 — this organization has 5 years of margin before it needs to have finished migrating.",
+        ],
+        math: [
+          { expr: "X + Y > Z \\;\\Longrightarrow\\; \\text{already too late}" },
+        ],
+        practice: [
+          {
+            prompt: "An organization's data must stay confidential for 15 more years (X), its PQC migration is estimated to take 8 years (Y), and a cryptographically relevant quantum computer is projected in 20 years (Z). By how many years does X + Y exceed Z?",
+            hint: "Compute X + Y, then subtract Z.",
+            placeholder: "years",
+            answer: "3",
+            explanation: "X + Y = 15 + 8 = 23, and 23 − 20 = 3. This organization is already 3 years past the point where starting migration today still guarantees safety — exactly the scenario \"harvest now, decrypt later\" describes, and why Mosca's inequality is used to argue for starting migration now rather than when a quantum computer is closer to existing.",
+          },
         ],
       },
     ],
