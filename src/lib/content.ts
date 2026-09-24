@@ -733,7 +733,7 @@ export const modules: Module[] = [
     title: "RSA & public-key cryptography",
     summary:
       "Two mathematically linked keys — one public, one private — solve the problem symmetric crypto can't: how do you share a secret with someone you've never met?",
-    minutes: 46,
+    minutes: 55,
     category: "Public-key",
     tags: ["developer", "architect", "executive", "researcher", "curious"],
     sections: [
@@ -833,6 +833,34 @@ export const modules: Module[] = [
         ],
       },
       {
+        heading: "Why n has to be exactly two large primes — not one, not thirty",
+        body: [
+          "The requirement \"n = p × q for two large primes\" is doing more work than it looks like. Both directions of getting it wrong break RSA completely, for different reasons.",
+          "Using a single prime as the modulus (n = p, with no q at all) breaks it immediately: φ(n) for a prime is just n − 1, computable on the spot with no factoring whatsoever, since the modulus's primality is already public. An attacker skips straight to finding d — the entire security argument evaporates, because \"hard to factor n\" was never a barrier to begin with.",
+          "Using many small primes multiplied together (n = p₁ × p₂ × ⋯ × p₃₀, say) breaks it the opposite way: n is trivially factorable by algorithms tuned for exactly this shape, like Pollard's rho or the elliptic curve method, which are fast whenever n has small factors — even if n itself is a large number. RSA's security specifically depends on n having no small factors at all, which is precisely what two similarly-sized large primes guarantees and a product of many small ones doesn't.",
+        ],
+        math: [
+          { expr: "\\text{single prime: } \\varphi(n) = n - 1 \\text{ (no factoring needed)}" },
+          { expr: "\\text{many small primes: } n = p_1 p_2 \\cdots p_k,\\quad \\varphi(n) = \\prod_{i=1}^{k}(p_i - 1)" },
+        ],
+        practice: [
+          {
+            prompt: "A broken RSA setup mistakenly uses n = 1000000007 directly as the modulus — n itself is prime, with no second factor. What is φ(n)?",
+            hint: "For a prime p used directly as the modulus, φ(p) = p − 1. No factoring is needed.",
+            placeholder: "φ(n)",
+            answer: "1000000006",
+            explanation: "φ(n) = n − 1 = 1,000,000,006. Because n's primality is public knowledge (it's the modulus), an attacker reads φ(n) off directly and computes d = e⁻¹ mod φ(n) immediately — the entire premise of RSA (φ(n) is secret unless you can factor n) requires n to actually need factoring in the first place.",
+          },
+          {
+            prompt: "A different broken setup uses n = 510510, the product of the seven small primes 2 × 3 × 5 × 7 × 11 × 13 × 17. What is φ(n)?",
+            hint: "For n = p₁ × p₂ × ⋯ × pₖ (distinct primes), φ(n) = (p₁−1)(p₂−1)⋯(pₖ−1).",
+            placeholder: "φ(n)",
+            answer: "92160",
+            explanation: "φ(n) = 1 × 2 × 4 × 6 × 10 × 12 × 16 = 92,160. Trial division alone finds all seven factors of 510510 almost instantly, since none of them are larger than 17 — real \"manyprime\" RSA breaks use algorithms like Pollard's rho or the elliptic curve method for larger small-prime products, but the underlying flaw is identical: small factors make n easy to factor no matter how large n itself is.",
+          },
+        ],
+      },
+      {
         heading: "What can go wrong: classic implementation attacks",
         body: [
           "RSA's math is sound; most real-world breaks come from how it's deployed. Three patterns recur across decades of RSA vulnerabilities, and none of them require factoring anything.",
@@ -880,6 +908,25 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "Trial division: factoring a modulus that's simply too small",
+        body: [
+          "Before reaching for anything clever, the most basic factoring approach is worth doing by hand once: test each small prime as a possible divisor of n, in order, until one divides evenly. This is trial division, and it's genuinely how you'd factor any RSA modulus small enough that its smaller prime factor is itself only a few digits — which is exactly why real RSA moduli use primes hundreds of digits long, putting trial division's O(√n) running time completely out of reach.",
+          "Worked example: n = 979. Testing 2, 3, 5, 7 all fail; 11 divides evenly (979 ÷ 11 = 89), and 89 is itself prime. So n = 11 × 89 — found in five quick divisions, because the smaller factor happened to be tiny.",
+        ],
+        math: [
+          { expr: "979 = 11 \\times 89" },
+        ],
+        practice: [
+          {
+            prompt: "Factor n = 1313 using trial division (test 2, 3, 5, 7, 11, 13, ... in order). Give the smaller prime factor.",
+            hint: "979's factors were 11 and 89 — try the same small primes here, in increasing order.",
+            placeholder: "smaller prime factor",
+            answer: "13",
+            explanation: "1313 ÷ 13 = 101, and both 13 and 101 are prime, so n = 13 × 101. Six divisions find it. A real RSA-2048 modulus has no factor anywhere near this small, which is exactly what makes trial division useless against it and the General Number Field Sieve necessary instead.",
+          },
+        ],
+      },
+      {
         heading: "The cube-root attack: RSA with no padding and a small exponent",
         body: [
           "If a message is encrypted with e = 3 and never padded, and the message M is small enough that M³ is actually less than the modulus n, something breaks completely: the modular reduction never triggers. C = M³ mod n is just C = M³, an ordinary integer cube — and anyone can recover M by taking an integer cube root, without touching the private key or factoring anything.",
@@ -895,6 +942,25 @@ export const modules: Module[] = [
             placeholder: "M",
             answer: "217",
             explanation: "217³ = 10,218,313 exactly, so M = 217. With real padding (OAEP), M would first be expanded to the size of n, making this shortcut impossible.",
+          },
+        ],
+      },
+      {
+        heading: "e = 1: the exponent that makes the modulus irrelevant",
+        body: [
+          "Take the small-exponent problem to its extreme and something even more degenerate happens. With e = 1, encryption is C = M¹ mod n = M mod n — and since a message M is always chosen smaller than n to begin with, M mod n is just M. The modulus n never does anything at all; the \"ciphertext\" is the plaintext, unchanged, in plain sight.",
+          "No cube root, no factoring, not even an integer root extraction — recovering M from C requires nothing but reading it. This is an extreme case of the same lesson as the cube-root attack: an exponent chosen for \"efficiency\" without any regard for the resulting math can throw away the encryption entirely, not just weaken it.",
+        ],
+        math: [
+          { expr: "e = 1 \\;\\Rightarrow\\; C = M^{1} \\bmod n = M" },
+        ],
+        practice: [
+          {
+            prompt: "An RSA public key uses e = 1. The published ciphertext is C = 424242. What is the plaintext M?",
+            hint: "With e = 1, C = M mod n — and since M < n, that's just M.",
+            placeholder: "M",
+            answer: "424242",
+            explanation: "M = C = 424242, unchanged. No private key, factoring, or root-extraction is needed — e = 1 makes the RSA transformation the identity function, so the modulus n is completely useless despite being however large the key generator chose.",
           },
         ],
       },
@@ -1187,7 +1253,7 @@ export const modules: Module[] = [
     title: "Diffie-Hellman key exchange",
     summary:
       "Two parties agree on a shared secret over a public channel, without ever transmitting the secret itself — the idea that started public-key cryptography.",
-    minutes: 34,
+    minutes: 40,
     category: "Protocols",
     tags: ["developer", "architect", "researcher"],
     sections: [
@@ -1232,6 +1298,25 @@ export const modules: Module[] = [
         ],
       },
       {
+        heading: "From shared secret to symmetric key",
+        body: [
+          "The raw shared secret — a single large integer both sides computed — is never used directly as an AES key. It's run through a hash function first (in modern designs, through HKDF, covered in the KDF module), producing a fixed-size digest that's then truncated or expanded to exactly the key length needed. This matters because the shared secret's size depends on the modulus p, while AES needs a specific fixed key size regardless of which DH group produced the secret.",
+          "Worked example: a DH exchange over a 2048-bit prime produces a shared secret that, once hashed with SHA-256, gives a 32-byte (256-bit) digest. An application needing an AES-128 key uses only the first 16 bytes of that digest and discards the rest — the extra bytes aren't wasted security, they're simply more output than an AES-128 key requires.",
+        ],
+        math: [
+          { expr: "K = \\mathrm{SHA\\text{-}256}(\\text{shared secret})[:16] \\quad \\text{for AES-128}" },
+        ],
+        practice: [
+          {
+            prompt: "A DH shared secret is hashed with SHA-256, producing a 32-byte digest. The application needs only an AES-128 key (16 bytes) from it. How many bytes of the digest are discarded?",
+            hint: "Subtract the bytes actually used from the digest's total length.",
+            placeholder: "bytes discarded",
+            answer: "16",
+            explanation: "32 − 16 = 16 bytes discarded. If the application instead needed AES-256 (32 bytes), it would use the entire digest with nothing left over — which is exactly why SHA-256 (rather than a shorter hash) is a common default for this step, since it comfortably covers both key sizes.",
+          },
+        ],
+      },
+      {
         heading: "Why DH alone isn't enough: the man-in-the-middle problem",
         body: [
           "Plain Diffie-Hellman guarantees secrecy from a passive eavesdropper, but nothing about who's actually on the other end. An active attacker sitting between Alice and Bob can run two separate DH exchanges — one with each of them — and relay traffic through itself, decrypting and re-encrypting everything, while both Alice and Bob believe they're talking directly to each other.",
@@ -1249,6 +1334,25 @@ export const modules: Module[] = [
         },
       },
       {
+        heading: "Parameter injection: an active attacker doesn't need to break the math",
+        body: [
+          "An attacker positioned to rewrite messages in transit (not just read them) has a far cheaper option than solving a discrete logarithm: replace the public generator g itself with a degenerate value before either side uses it. Three substitutions each force the resulting shared secret to one of a tiny handful of possible values, regardless of how large and random Alice's and Bob's real secret exponents are.",
+          "The simplest: substitute g = 1. Then every public value A = 1ᵃ mod p and B = 1ᵇ mod p is just 1, and the final shared secret gᵃᵇ = 1ᵃᵇ mod p is always 1 — for every possible a and b. Alice and Bob each still compute something and believe the exchange succeeded, but the \"secret\" was never actually secret; it's a fixed public constant the attacker knew before the handshake even began.",
+        ],
+        math: [
+          { expr: "g = 1 \\;\\Rightarrow\\; A = B = 1 \\;\\Rightarrow\\; \\text{shared secret} = 1^{ab} \\bmod p = 1 \\ \\text{(always)}" },
+        ],
+        practice: [
+          {
+            prompt: "A MITM attacker rewrites the DH parameters in transit, substituting g = 1 for the real generator, over a prime p = 97. What will the resulting shared secret always equal, no matter what secret exponents Alice and Bob each pick?",
+            hint: "1 raised to any power is always the same value.",
+            placeholder: "shared secret",
+            answer: "1",
+            explanation: "1 to any power is 1, so the shared secret is always 1 — completely independent of Alice's and Bob's secret exponents. The same trick works with g = p (every public value becomes 0) or g = p−1 (the shared secret collapses to one of only two possible values, ±1). This is exactly why real implementations validate g against the expected standard parameters rather than accepting whatever value arrives on the wire.",
+          },
+        ],
+      },
+      {
         heading: "Elliptic-curve Diffie-Hellman (ECDH)",
         body: [
           "The same idea maps onto elliptic curves: instead of modular exponentiation, parties combine points on a curve, using exactly the scalar multiplication (kG) and point addition covered in the ECC module. X25519 (ECDH over Curve25519) is the default key exchange in TLS 1.3 and in most modern SSH and messaging protocols, valued for speed and resistance to several classes of implementation error.",
@@ -1264,6 +1368,22 @@ export const modules: Module[] = [
         heading: "Safe primes and small-subgroup attacks",
         body: [
           "The choice of p and g isn't arbitrary. If p is chosen carelessly, the group of values reachable by exponentiation can have small subgroups, and an attacker can sometimes force a DH exchange into one of those subgroups, drastically shrinking the search space for the discrete logarithm. Real implementations use \"safe primes\" (p where (p−1)/2 is also prime) specifically to avoid this, and validate that received public values aren't degenerate (like 0 or 1) before using them.",
+        ],
+      },
+      {
+        heading: "Logjam: downgrading to export-grade parameters",
+        body: [
+          "The 2015 Logjam attack targeted a different weakness: leftover \"export-grade\" DH cipher suites from 1990s-era US cryptography export restrictions, which capped key exchange parameters at a deliberately weak 512 bits. An active MITM attacker could rewrite the handshake's cipher-suite negotiation to force both a modern client and server down to this legacy 512-bit option, even though neither side actually wanted it.",
+          "Once forced down to 512 bits, the discrete logarithm problem becomes tractable — not instantly, but within reach of a well-resourced attacker who precomputes most of the work for one fixed, widely reused prime ahead of time, then finishes the specific discrete log for each intercepted connection in minutes. The lesson generalizes well beyond DH: a protocol that still offers a deliberately weak option, even one nobody chooses under normal conditions, gives an active attacker a downgrade lever — the fix was simply retiring export-grade cipher suites entirely, not trying to strengthen them.",
+        ],
+        practice: [
+          {
+            prompt: "Export-grade DH was capped at 512-bit primes. Modern deployments use 2048-bit primes as a minimum. Roughly how many times larger, in bits, is a modern DH prime compared to an export-grade one?",
+            hint: "Divide the modern bit length by the export-grade bit length.",
+            placeholder: "times larger",
+            answer: "4",
+            explanation: "2048 ÷ 512 = 4. That factor-of-4 jump in bit length corresponds to a vastly larger — not merely 4×, but astronomically larger — jump in discrete-log difficulty, since the best known classical attacks scale sub-exponentially with bit length, not linearly.",
+          },
         ],
       },
       {
@@ -2471,7 +2591,7 @@ export const personas: Persona[] = [
     tagline: "System & infrastructure focus",
     pitch:
       "Every PKI, VPN and TLS terminator you've designed rests on the same handful of primitives. Get the mental model right before you redesign anything.",
-    firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 24 },
+    firstWin: { label: "Trace trust from key exchange to signature", slug: "diffie-hellman-key-exchange", minutes: 40 },
     moduleSlugs: [
       "diffie-hellman-key-exchange",
       "elliptic-curve-cryptography",
