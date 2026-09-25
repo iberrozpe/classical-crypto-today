@@ -87,6 +87,10 @@ export default function NavigateGraph({
     origY: number;
     moved: boolean;
   } | null>(null);
+  // How far a wheel gesture may zoom out — normally MIN_ZOOM, but lowered to
+  // match the initial fit-to-bounds scale when the graph is too spread out
+  // to fit at MIN_ZOOM, so zooming out further never snaps back up to it.
+  const minZoomRef = useRef(MIN_ZOOM);
 
   useEffect(() => {
     const simNodes: SimNode[] = rawNodes.map((n) => ({ ...n }));
@@ -114,12 +118,48 @@ export default function NavigateGraph({
 
     for (let i = 0; i < 350; i++) sim.tick();
 
+    // Fit the initial view to every node's bounding box, padded for their
+    // radius and label text, instead of a fixed transform that assumes the
+    // layout always settles within the viewBox — d3-force's spread varies
+    // with node/link count, and a fixed identity transform can start with
+    // nodes clipped outside view.
+    const PADDING = 50;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const n of simNodes) {
+      const r = radiusFor(n.type);
+      minX = Math.min(minX, (n.x ?? 0) - r);
+      maxX = Math.max(maxX, (n.x ?? 0) + r);
+      minY = Math.min(minY, (n.y ?? 0) - r);
+      maxY = Math.max(maxY, (n.y ?? 0) + r);
+    }
+    const boundsWidth = Math.max(maxX - minX, 1);
+    const boundsHeight = Math.max(maxY - minY, 1);
+    // Not clamped to MIN_ZOOM here — the point is to fit everything, even if
+    // that needs a smaller scale than the comfortable manual-zoom floor.
+    // ABSOLUTE_MIN_K is just a sanity backstop against a degenerate (e.g.
+    // near-zero) scale if the layout were ever extremely spread out.
+    const ABSOLUTE_MIN_K = 0.2;
+    const fitK = Math.min(
+      MAX_ZOOM,
+      Math.max(ABSOLUTE_MIN_K, Math.min((WIDTH - PADDING * 2) / boundsWidth, (HEIGHT - PADDING * 2) / boundsHeight)),
+    );
+    const fitTransform = {
+      x: WIDTH / 2 - ((minX + maxX) / 2) * fitK,
+      y: HEIGHT / 2 - ((minY + maxY) / 2) * fitK,
+      k: fitK,
+    };
+    minZoomRef.current = Math.min(MIN_ZOOM, fitK);
+
     // One-time layout computed by an external physics engine (d3-force), not
     // derived from render state — there's no way to compute node positions
     // during render itself.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNodes(simNodes);
     setLinks(simLinks as unknown as { source: SimNode; target: SimNode }[]);
+    setTransform(fitTransform);
   }, [rawNodes, rawLinks]);
 
   const selected = useMemo(() => nodes.find((n) => n.id === selectedId) ?? null, [nodes, selectedId]);
@@ -250,7 +290,7 @@ export default function NavigateGraph({
     function handleWheel(e: WheelEvent) {
       e.preventDefault();
       setTransform((t) => {
-        const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, t.k - e.deltaY * 0.0015));
+        const next = Math.min(MAX_ZOOM, Math.max(minZoomRef.current, t.k - e.deltaY * 0.0015));
         return { ...t, k: next };
       });
     }
