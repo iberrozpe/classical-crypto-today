@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navLinks, isActiveLink, IconChevronLeft, IconChevronRight } from "./nav-links";
+import { navLinks, isActiveLink, IconChevronLeft, IconChevronRight, IconSearch } from "./nav-links";
 import ThemeToggle from "./ThemeToggle";
+import { openSearchPalette } from "./SearchPalette";
 
 const STORAGE_KEY = "cct-sidebar-collapsed";
 
@@ -56,6 +57,25 @@ export default function Sidebar() {
           }`}
         >
           {collapsed ? <IconChevronRight /> : <IconChevronLeft />}
+        </button>
+      </div>
+
+      <div className="px-3 pt-2">
+        <button
+          type="button"
+          onClick={openSearchPalette}
+          title={collapsed ? "Search (⌘K)" : undefined}
+          className={`flex w-full items-center gap-3 rounded-md border border-border px-2.5 py-2 text-sm text-muted transition hover:border-accent/50 hover:text-foreground ${
+            collapsed ? "justify-center" : "justify-between"
+          }`}
+        >
+          <span className="flex items-center gap-3">
+            <IconSearch />
+            {!collapsed && "Search"}
+          </span>
+          {!collapsed && (
+            <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+          )}
         </button>
       </div>
 

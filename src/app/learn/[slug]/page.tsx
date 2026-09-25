@@ -4,9 +4,11 @@ import type { Metadata } from "next";
 import { getModule, modules, roleLabels } from "@/lib/content";
 import { playgroundTools } from "@/lib/playground";
 import { getQuiz } from "@/lib/quiz";
+import { slugify } from "@/lib/slugify";
 import Math from "@/components/Math";
 import DiagramRenderer from "@/components/diagrams/DiagramRenderer";
 import PracticeProblems from "@/components/PracticeProblems";
+import DeepLinkDetails from "@/components/DeepLinkDetails";
 
 export async function generateStaticParams() {
   return modules.map((m) => ({ slug: m.slug }));
@@ -34,6 +36,7 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
+      <DeepLinkDetails />
       <Link href="/learn" className="text-sm text-muted hover:text-foreground">
         ← All modules
       </Link>
@@ -61,7 +64,11 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
       <article className="mt-12 space-y-10">
         {mod.sections.map((s) =>
           s.advanced ? (
-            <details key={s.heading} className="group rounded-lg border border-border open:border-transparent">
+            <details
+              key={s.heading}
+              id={slugify(s.heading)}
+              className="group scroll-mt-20 rounded-lg border border-border open:border-transparent"
+            >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:content-none">
                 <span className="flex items-center gap-3">
                   <span className="shrink-0 rounded-full border border-accent/40 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-accent">
@@ -85,7 +92,7 @@ export default async function ModulePage(props: PageProps<"/learn/[slug]">) {
               </div>
             </details>
           ) : (
-            <section key={s.heading}>
+            <section key={s.heading} id={slugify(s.heading)} className="scroll-mt-20">
               <h2 className="text-xl font-semibold text-foreground">{s.heading}</h2>
               <div className="mt-3 space-y-4">
                 {s.body.map((p, i) => (

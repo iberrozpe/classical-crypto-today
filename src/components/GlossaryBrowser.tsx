@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { GlossaryTerm } from "@/lib/glossary";
 import { getModule } from "@/lib/content";
 import { getUseCase } from "@/lib/usecases";
+import { slugify } from "@/lib/slugify";
 
 export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
   const [query, setQuery] = useState("");
@@ -73,7 +74,7 @@ export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
                   .map((slug) => getUseCase(slug))
                   .filter((u): u is NonNullable<typeof u> => Boolean(u));
                 return (
-                  <div key={t.term} className="border-b border-border pb-5 last:border-0">
+                  <div key={t.term} id={slugify(t.term)} className="scroll-mt-20 border-b border-border pb-5 last:border-0">
                     <p className="font-semibold text-foreground">{t.term}</p>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.definition}</p>
                     {(modules.length > 0 || useCaseLinks.length > 0) && (

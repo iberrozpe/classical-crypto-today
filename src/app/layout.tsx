@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Breadcrumb from "@/components/Breadcrumb";
 import Footer from "@/components/Footer";
+import SearchPalette from "@/components/SearchPalette";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main className="min-w-0 flex-1">{children}</main>
           <Footer />
         </div>
+        <SearchPalette />
         <Analytics />
       </body>
     </html>

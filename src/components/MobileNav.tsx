@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navLinks, isActiveLink, IconMenu, IconX } from "./nav-links";
+import { navLinks, isActiveLink, IconMenu, IconX, IconSearch } from "./nav-links";
 import ThemeToggle from "./ThemeToggle";
+import { openSearchPalette } from "./SearchPalette";
 
 export default function MobileNav() {
   const pathname = usePathname();
@@ -16,14 +17,24 @@ export default function MobileNav() {
         <Link href="/" className="text-sm font-semibold tracking-tight">
           Classical Crypto <span className="text-accent">Today</span>
         </Link>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open navigation"
-          className="rounded-md border border-border p-2 text-muted hover:text-foreground"
-        >
-          <IconMenu />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openSearchPalette}
+            aria-label="Search"
+            className="rounded-md border border-border p-2 text-muted hover:text-foreground"
+          >
+            <IconSearch />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Open navigation"
+            className="rounded-md border border-border p-2 text-muted hover:text-foreground"
+          >
+            <IconMenu />
+          </button>
+        </div>
       </div>
 
       {open && (
