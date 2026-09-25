@@ -98,6 +98,12 @@ export default function NavigateGraph({
     const simNodes: SimNode[] = rawNodes.map((n) => ({ ...n }));
     const simLinks: SimLink[] = rawLinks.map((l) => ({ ...l }));
 
+    const linkedIds = new Set<string>();
+    for (const l of rawLinks) {
+      linkedIds.add(l.source);
+      linkedIds.add(l.target);
+    }
+
     const sim = forceSimulation(simNodes)
       .force(
         "link",
@@ -116,14 +122,16 @@ export default function NavigateGraph({
         "collide",
         forceCollide<SimNode>((d) => radiusFor(d.type) + 16),
       )
-      // A weak, constant pull toward the center for every node. forceCenter
-      // above only recenters the layout's overall center of mass — it does
-      // nothing for a node with no links (nothing covered elsewhere in the
-      // catalog to attach to, e.g. a standalone encoding challenge), which
-      // charge repulsion alone pushes arbitrarily far from everything else.
-      // Weak enough that well-linked nodes stay governed by their links.
-      .force("x", forceX<SimNode>(WIDTH / 2).strength(0.03))
-      .force("y", forceY<SimNode>(HEIGHT / 2).strength(0.03))
+      // A pull toward the center for every node. forceCenter above only
+      // recenters the layout's overall center of mass — it does nothing for
+      // a node with no links (nothing covered elsewhere in the catalog to
+      // attach to, e.g. a standalone encoding challenge), which charge
+      // repulsion alone pushes arbitrarily far out with nothing to counter
+      // it. Those fully isolated nodes get a firm pull, since nothing else
+      // is acting on them anyway; linked nodes get a much weaker one so
+      // they stay governed by their links, not dragged off their cluster.
+      .force("x", forceX<SimNode>(WIDTH / 2).strength((d) => (linkedIds.has(d.id) ? 0.03 : 0.25)))
+      .force("y", forceY<SimNode>(HEIGHT / 2).strength((d) => (linkedIds.has(d.id) ? 0.03 : 0.25)))
       .stop();
 
     for (let i = 0; i < 350; i++) sim.tick();
