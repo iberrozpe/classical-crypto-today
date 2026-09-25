@@ -39,18 +39,19 @@
 }
 
 html {
-  /* Chrome/Edge's two-finger swipe-back/forward gesture is implemented as
-     history navigation once a horizontal overscroll reaches the document
-     edge — scoping the fix to individual components (like the Navigate
-     graph) only closes it there. Disabling horizontal overscroll chaining
-     on the root closes it everywhere, without touching normal vertical
-     scrolling or pull-to-refresh. */
-  overscroll-behavior-x: none;
+  /* Browser swipe/overscroll gestures (two-finger back/forward on the
+     horizontal axis, pull-to-refresh-style reload attempts on the
+     vertical axis) are both implemented as chaining past the document's
+     own scroll boundary — scoping the fix to individual components (like
+     the Navigate graph) only closes it there. Disabling overscroll
+     chaining on both axes at the root closes it everywhere, without
+     touching normal in-page scrolling itself. */
+  overscroll-behavior: none;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
 }
