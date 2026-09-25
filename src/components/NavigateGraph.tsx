@@ -159,9 +159,20 @@ export default function NavigateGraph({
     if (!drag.current.moved) return;
 
     const world = clientToWorld(e.clientX, e.clientY);
-    setNodes((prev) =>
-      prev.map((n) => (n.id === drag.current!.id ? { ...n, x: world.x, y: world.y, fx: world.x, fy: world.y } : n)),
-    );
+    setNodes((prev) => {
+      // Mutate the node in place rather than replacing it with a new object —
+      // the links array's source/target were resolved by d3-force to these
+      // exact node instances, so swapping in a copy would leave rendered
+      // lines pointing at the node's old, stale position forever.
+      const node = prev.find((n) => n.id === drag.current!.id);
+      if (node) {
+        node.x = world.x;
+        node.y = world.y;
+        node.fx = world.x;
+        node.fy = world.y;
+      }
+      return [...prev];
+    });
   }
 
   function onNodePointerUp(e: React.PointerEvent, node: SimNode) {
