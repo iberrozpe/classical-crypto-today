@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getUseCase, useCases } from "@/lib/usecases";
 import { getModule, roleLabels } from "@/lib/content";
+import { playgroundTools } from "@/lib/playground";
 import { getUseCaseQuiz } from "@/lib/usecase-quiz";
 import { slugify } from "@/lib/slugify";
 import Math from "@/components/Math";
@@ -34,6 +35,7 @@ export default async function UseCasePage(props: PageProps<"/use-cases/[slug]">)
   const relatedModules = useCase.relatedModules
     .map((s) => getModule(s))
     .filter((m) => m !== undefined);
+  const relatedTools = playgroundTools.filter((t) => t.relatedUseCases?.includes(slug));
   const quiz = getUseCaseQuiz(slug);
 
   return (
@@ -139,6 +141,20 @@ export default async function UseCasePage(props: PageProps<"/use-cases/[slug]">)
           <p className="mt-1 text-sm text-muted">
             {quiz.questions.length} quick questions, with an explanation for every answer.
           </p>
+        </div>
+      )}
+
+      {relatedTools.length > 0 && (
+        <div className="mt-16 rounded-lg border border-accent/40 bg-accent-soft p-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-accent">Try it yourself</p>
+          <div className="mt-3 space-y-3">
+            {relatedTools.map((t) => (
+              <Link key={t.slug} href={`/playground/${t.slug}`} className="block hover:text-accent">
+                <span className="text-lg font-semibold">{t.title} →</span>
+                <p className="text-sm text-muted">{t.summary}</p>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
