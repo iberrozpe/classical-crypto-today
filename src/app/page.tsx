@@ -123,6 +123,15 @@ export default function Home() {
           </p>
         </Link>
         <Link
+          href="/quizzes"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Quizzes</h3>
+          <p className="mt-2 text-sm text-muted">
+            Every knowledge check on the site in one place — one per Learn module, Use Case, and Standards body.
+          </p>
+        </Link>
+        <Link
           href="/assess"
           className="rounded-lg border border-border p-6 transition hover:border-accent"
         >
