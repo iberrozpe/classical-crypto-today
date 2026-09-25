@@ -239,8 +239,9 @@ export default function NavigateGraph({
 
   const selected = useMemo(() => nodes.find((n) => n.id === selectedId) ?? null, [nodes, selectedId]);
 
+  const focusId = hoverId ?? selectedId;
+
   const connectedIds = useMemo(() => {
-    const focusId = hoverId ?? selectedId;
     if (!focusId) return null;
     const set = new Set<string>([focusId]);
     for (const l of links) {
@@ -248,7 +249,7 @@ export default function NavigateGraph({
       if (l.target.id === focusId) set.add(l.source.id);
     }
     return set;
-  }, [links, hoverId, selectedId]);
+  }, [links, focusId]);
 
   function toggleCategory(cat: string) {
     setSelectedCategories((prev) => {
@@ -422,6 +423,10 @@ export default function NavigateGraph({
           <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}>
             {links.map((l, i) => {
               const dimmed = isNodeDimmed(l.source) || isNodeDimmed(l.target);
+              // A link directly touching the hovered/selected node, not just
+              // any non-dimmed link — a category filter shouldn't thicken
+              // every link within it, only the focused node's own edges.
+              const isFocusLink = focusId !== null && (l.source.id === focusId || l.target.id === focusId);
               return (
                 <line
                   key={i}
@@ -429,9 +434,9 @@ export default function NavigateGraph({
                   y1={l.source.y}
                   x2={l.target.x}
                   y2={l.target.y}
-                  stroke="var(--border)"
-                  strokeWidth={1}
-                  opacity={dimmed ? 0.15 : 0.6}
+                  stroke={isFocusLink ? "var(--accent)" : "var(--border)"}
+                  strokeWidth={isFocusLink ? 2.5 : 1}
+                  opacity={dimmed ? 0.15 : isFocusLink ? 1 : 0.6}
                 />
               );
             })}
