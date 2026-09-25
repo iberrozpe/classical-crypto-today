@@ -10,7 +10,7 @@ export const navLinks = [
   { href: "/quizzes", label: "Quizzes", icon: IconQuiz },
   { href: "/compare", label: "Compare", icon: IconTable },
   { href: "/glossary", label: "Glossary", icon: IconGlossary },
-  { href: "/references", label: "References", icon: IconReferences },
+  { href: "/library", label: "Library", icon: IconLibrary },
   { href: "/migration-checklist", label: "Checklist", icon: IconClipboard },
   { href: "/assess", label: "Assess", icon: IconChecklist },
   { href: "/about", label: "About", icon: IconInfo },
@@ -154,12 +154,13 @@ export function IconNetwork() {
   );
 }
 
-export function IconReferences() {
+export function IconLibrary() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-      <path d="M6 3h13v18H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-      <path d="M9 7h7M9 11h7" />
-      <path d="M4 17.5V19" />
+      <path d="M4 4v16" />
+      <path d="M8 4v16" />
+      <path d="M8 6h6a2 2 0 0 1 2 2v12" />
+      <path d="M20 5.5 16.5 20.5" />
     </svg>
   );
 }

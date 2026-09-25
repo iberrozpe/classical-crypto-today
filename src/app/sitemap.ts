@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/quizzes",
     "/compare",
     "/glossary",
-    "/references",
+    "/library",
     "/migration-checklist",
     "/assess",
     "/about",

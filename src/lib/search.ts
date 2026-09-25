@@ -4,9 +4,10 @@ import { playgroundTools } from "./playground";
 import { glossaryTerms } from "./glossary";
 import { challenges } from "./challenges";
 import { standardsBodies } from "./standards";
+import { libraryEntries } from "./library";
 import { slugify } from "./slugify";
 
-export type SearchEntryType = "module" | "usecase" | "tool" | "glossary" | "section" | "challenge" | "standard";
+export type SearchEntryType = "module" | "usecase" | "tool" | "glossary" | "section" | "challenge" | "standard" | "library";
 
 export interface SearchEntry {
   type: SearchEntryType;
@@ -94,6 +95,16 @@ function buildIndex(): SearchEntry[] {
         href: `/standards/${s.slug}#${slugify(sec.heading)}`,
       });
     }
+  }
+
+  for (const e of libraryEntries) {
+    entries.push({
+      type: "library",
+      typeLabel: "Library",
+      title: e.title,
+      subtitle: e.publisher,
+      href: `/library#${slugify(e.title)}`,
+    });
   }
 
   for (const g of glossaryTerms) {

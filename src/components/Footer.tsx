@@ -16,8 +16,8 @@ export default function Footer() {
           <Link href="/about" className="underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-accent">
             About
           </Link>
-          <Link href="/references" className="underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-accent">
-            References
+          <Link href="/library" className="underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-accent">
+            Library
           </Link>
           <Link href="/changelog" className="underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-accent">
             Changelog

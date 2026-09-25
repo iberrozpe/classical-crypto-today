@@ -21,7 +21,7 @@ const STATIC_LABELS: Record<string, string> = {
   quizzes: "Quizzes",
   assess: "Assess",
   navigate: "Navigate",
-  references: "References",
+  library: "Library",
   about: "About",
   changelog: "Changelog",
   quiz: "Knowledge check",

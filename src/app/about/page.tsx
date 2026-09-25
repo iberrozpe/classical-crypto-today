@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { furtherReadingSites, furtherReadingBooks } from "@/lib/further-reading";
 import { modules } from "@/lib/content";
 import { playgroundTools } from "@/lib/playground";
 import { glossaryTerms } from "@/lib/glossary";
@@ -10,6 +9,7 @@ import { quizzes } from "@/lib/quiz";
 import { useCaseQuizzes } from "@/lib/usecase-quiz";
 import { standardsBodies } from "@/lib/standards";
 import { standardsQuizzes } from "@/lib/standards-quiz";
+import { libraryEntries } from "@/lib/library";
 
 export const metadata: Metadata = {
   title: "About — Classical Crypto Today",
@@ -26,6 +26,7 @@ const sections = [
   { href: "/navigate", title: "Navigate", body: "Every module, tool, and category as a single connected graph, for when you'd rather explore by clicking around than by reading a list." },
   { href: "/compare", title: "Compare", body: "Side-by-side cheat sheets — RSA vs. ECC vs. Diffie-Hellman, AES modes, hash functions — for when you already know the material and just need the numbers." },
   { href: "/glossary", title: "Glossary", body: `${glossaryTerms.length} terms used across the site, defined plainly and linked back to the module that covers each one in depth.` },
+  { href: "/library", title: "Library", body: `${libraryEntries.length} standards, RFCs, papers, sites, and books this site draws from and points toward — searchable and filterable by type in one place.` },
   { href: "/migration-checklist", title: "Checklist", body: "A practical PQC-migration inventory for GRC and architecture teams — not a compliance audit, a starting point." },
   { href: "/quizzes", title: "Quizzes", body: `Every knowledge check on the site in one list — ${quizzes.length + useCaseQuizzes.length + standardsQuizzes.length} quizzes across every Learn module, Use Case, and Standards body, with an explanation for every answer.` },
   { href: "/assess", title: "Assess", body: "Eight questions about what you actually run today, mapped to a prioritized reading list." },
@@ -50,11 +51,11 @@ export default function AboutPage() {
           Every claim on this site is meant to be checkable. Diagrams are computed from the real
           math, not hand-waved; Playground tools run your browser&apos;s actual Web Crypto API,
           not a simulation; and every module traces back to a real standard, RFC, or paper —
-          listed in full on the{" "}
-          <Link href="/references" className="text-accent underline underline-offset-4">
-            References
-          </Link>{" "}
-          page.
+          listed in full in the{" "}
+          <Link href="/library" className="text-accent underline underline-offset-4">
+            Library
+          </Link>
+          .
         </p>
       </div>
 
@@ -96,11 +97,11 @@ export default function AboutPage() {
         </p>
         <p>
           All information is sourced from publicly available standards, RFCs, and papers — listed
-          in full on the{" "}
-          <Link href="/references" className="text-accent underline underline-offset-4">
-            References
+          in full in the{" "}
+          <Link href="/library" className="text-accent underline underline-offset-4">
+            Library
           </Link>{" "}
-          page — and cross-checked against them during writing. Despite that effort, the content
+          — and cross-checked against them during writing. Despite that effort, the content
           may still contain inaccuracies; where this site and the underlying specification
           disagree, treat the specification as authoritative.
         </p>
@@ -266,47 +267,6 @@ export default function AboutPage() {
             Report an issue ↗
           </a>
         </div>
-      </div>
-
-      <h2 className="mt-14 text-xl font-semibold text-foreground">Further reading</h2>
-      <p className="mt-4 text-muted">Curated sites and books for going deeper than any single module can.</p>
-
-      <p className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted">
-        Websites &amp; blogs
-      </p>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {furtherReadingSites.map((item) => (
-          <a
-            key={item.url}
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-border bg-surface p-4 transition hover:border-accent/50 hover:bg-surface-hover"
-          >
-            <span className="font-medium text-foreground">{item.title} ↗</span>
-            <p className="mt-0.5 text-xs text-muted">{item.author}</p>
-            <p className="mt-1.5 text-sm text-muted">{item.description}</p>
-          </a>
-        ))}
-      </div>
-
-      <p className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted">
-        Essential books
-      </p>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {furtherReadingBooks.map((item) => (
-          <a
-            key={item.url}
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-border bg-surface p-4 transition hover:border-accent/50 hover:bg-surface-hover"
-          >
-            <span className="font-medium text-foreground">{item.title} ↗</span>
-            <p className="mt-0.5 text-xs text-muted">{item.author}</p>
-            <p className="mt-1.5 text-sm text-muted">{item.description}</p>
-          </a>
-        ))}
       </div>
 
       <div className="mt-14 rounded-lg border border-border bg-surface p-6">
