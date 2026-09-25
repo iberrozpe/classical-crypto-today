@@ -14,7 +14,7 @@ export interface MathBlock {
 
 export type DiagramSpec =
   | { type: "sequence"; title?: string; steps: { label: string; detail?: string }[] }
-  | { type: "structure"; title?: string; blocks: { label: string; detail?: string }[] }
+  | { type: "structure"; title?: string; blocks: { label: string; detail?: string; href?: string }[] }
   | {
       type: "compare";
       left: { title: string; points: string[] };
