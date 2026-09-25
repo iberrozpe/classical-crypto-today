@@ -8,6 +8,8 @@ import {
   forceManyBody,
   forceCenter,
   forceCollide,
+  forceX,
+  forceY,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from "d3-force";
@@ -114,6 +116,14 @@ export default function NavigateGraph({
         "collide",
         forceCollide<SimNode>((d) => radiusFor(d.type) + 16),
       )
+      // A weak, constant pull toward the center for every node. forceCenter
+      // above only recenters the layout's overall center of mass — it does
+      // nothing for a node with no links (nothing covered elsewhere in the
+      // catalog to attach to, e.g. a standalone encoding challenge), which
+      // charge repulsion alone pushes arbitrarily far from everything else.
+      // Weak enough that well-linked nodes stay governed by their links.
+      .force("x", forceX<SimNode>(WIDTH / 2).strength(0.03))
+      .force("y", forceY<SimNode>(HEIGHT / 2).strength(0.03))
       .stop();
 
     for (let i = 0; i < 350; i++) sim.tick();

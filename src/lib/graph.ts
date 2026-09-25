@@ -86,6 +86,9 @@ export function buildGraph(): { nodes: GraphNode[]; links: GraphLink[] } {
     for (const relatedSlug of c.relatedModules ?? []) {
       links.push({ source: `module:${relatedSlug}`, target: `challenge:${c.slug}` });
     }
+    for (const relatedUseCase of c.relatedUseCases ?? []) {
+      links.push({ source: `usecase:${relatedUseCase}`, target: `challenge:${c.slug}` });
+    }
   }
 
   for (const s of standardsBodies) {
