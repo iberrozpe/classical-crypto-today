@@ -7,11 +7,11 @@ export const navLinks = [
   { href: "/standards", label: "Standards", icon: IconStandards },
   { href: "/playground", label: "Playground", icon: IconFlask },
   { href: "/challenges", label: "Challenges", icon: IconFlag },
+  { href: "/quizzes", label: "Quizzes", icon: IconQuiz },
   { href: "/compare", label: "Compare", icon: IconTable },
   { href: "/glossary", label: "Glossary", icon: IconGlossary },
   { href: "/references", label: "References", icon: IconReferences },
   { href: "/migration-checklist", label: "Checklist", icon: IconClipboard },
-  { href: "/quizzes", label: "Quizzes", icon: IconQuiz },
   { href: "/assess", label: "Assess", icon: IconChecklist },
   { href: "/about", label: "About", icon: IconInfo },
 ];
