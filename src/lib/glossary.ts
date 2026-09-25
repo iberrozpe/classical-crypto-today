@@ -449,6 +449,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["rsa-padding-oaep-pkcs1"],
   },
   {
+    term: "PKCS#11 (Cryptoki)",
+    definition:
+      "The vendor-neutral API for talking to hardware security tokens — HSMs, smart cards, USB keys — through a fixed set of functions (C_GenerateKeyPair, C_Sign, C_WrapKey) that every conforming token implements identically. Its CKA_SENSITIVE / CKA_EXTRACTABLE object attributes are what let a key exist provably in exactly one place.",
+    relatedModules: ["pkcs11-cryptographic-tokens"],
+  },
+  {
     term: "Pohlig-Hellman algorithm",
     definition:
       "An algorithm that breaks the discrete logarithm problem — classical or elliptic-curve — whenever the group's order is smooth (factors into small primes), by solving the discrete log in each small subgroup and recombining the results with the Chinese Remainder Theorem.",

@@ -222,6 +222,121 @@ export const useCaseQuizzes: UseCaseQuiz[] = [
     ],
   },
   {
+    useCaseSlug: "pkcs11-cryptographic-tokens",
+    questions: [
+      {
+        question: "What problem was PKCS#11 originally created to solve?",
+        options: [
+          "Every HSM and smart card vendor shipped its own proprietary API, so switching hardware meant rewriting an application's integration",
+          "RSA encryption was too slow on early hardware",
+          "There was no standard certificate format",
+          "TLS needed a faster handshake",
+        ],
+        correctIndex: 0,
+        explanation: "Before PKCS#11, an application had to integrate separately with each vendor's proprietary API. Cryptoki standardized the API itself, so the same application code works against any conforming token.",
+      },
+      {
+        question: "What is Cryptoki?",
+        options: [
+          "A hashing algorithm",
+          "A certificate format",
+          "PKCS#11's other name — the vendor-neutral API for talking to hardware security tokens",
+          "A key-wrapping mechanism",
+        ],
+        correctIndex: 2,
+        explanation: "Cryptoki (\"cryptographic token interface\") is PKCS#11's own name for itself — the fixed set of C function calls every conforming token exposes.",
+      },
+      {
+        question: "In Cryptoki's object model, what does an application actually receive when it asks for a private key?",
+        options: [
+          "The raw private key bytes, base64-encoded",
+          "An opaque handle — an integer reference — never the key's actual value",
+          "A PEM file",
+          "Nothing; private keys can't be referenced at all",
+        ],
+        correctIndex: 1,
+        explanation: "The application receives a handle and asks the token to perform operations using it. The key material itself never has to leave the hardware boundary.",
+      },
+      {
+        question: "What does a PKCS#11 \"session\" carry?",
+        options: [
+          "A TLS certificate",
+          "A copy of every object on the token",
+          "The token's firmware version",
+          "A login state — logged out, CKU_USER, or CKU_SO — that gates access to private and secret objects",
+        ],
+        correctIndex: 3,
+        explanation: "A session is an application's open connection to a token. Its login state (public, user, or security officer) determines which objects and operations are accessible.",
+      },
+      {
+        question: "What does setting CKA_EXTRACTABLE = false on a private key actually guarantee?",
+        options: [
+          "The key can be exported once, by an administrator only",
+          "The key can be exported, but only in wrapped form",
+          "The key can never leave the token in any form, including wrapped, enforced by the token itself",
+          "The key will be deleted after first use",
+        ],
+        correctIndex: 2,
+        explanation: "CKA_EXTRACTABLE = false blocks every operation — including C_WrapKey — that would let the key leave the token, in the clear or wrapped. It's enforced by the token, not the calling application.",
+      },
+      {
+        question: "The Web Crypto API's generateKey takes an `extractable` boolean. What does it correspond to in PKCS#11 terms?",
+        options: [
+          "CKA_SENSITIVE",
+          "CKA_EXTRACTABLE — real enforcement by the runtime, the same as a token refusing to export a non-extractable key",
+          "CKA_SIGN",
+          "It has no PKCS#11 equivalent",
+        ],
+        correctIndex: 1,
+        explanation: "Setting extractable: false makes the browser itself refuse to export or wrap that key — the same real enforcement a PKCS#11 token applies via CKA_EXTRACTABLE.",
+      },
+      {
+        question: "Which of these commonly uses PKCS#11 under the hood?",
+        options: [
+          "A government PIV/CAC smart card authenticating a workstation login",
+          "A DNS lookup",
+          "An HTTP redirect",
+          "A CSS stylesheet"
+        ],
+        correctIndex: 0,
+        explanation: "PIV/CAC cards, YubiKeys, browser client-certificate logins, and CA root keys held in HSMs typically all go through a PKCS#11 module — it's the one integration path that works across hardware vendors.",
+      },
+      {
+        question: "What real-world attribute misconfiguration enables the classic PKCS#11 \"wrap-then-decrypt\" key extraction attack?",
+        options: [
+          "A key with both CKA_SIGN and CKA_VERIFY set",
+          "A symmetric key with both CKA_WRAP and CKA_DECRYPT set to true",
+          "A certificate with an expired validity period",
+          "A token left in CKU_SO login state",
+        ],
+        correctIndex: 1,
+        explanation: "If a wrapping key also has decrypt rights, an attacker can wrap a sensitive key, then decrypt that same wrapped blob with the identical key — recovering the sensitive key's raw bytes, bypassing CKA_SENSITIVE and CKA_EXTRACTABLE entirely.",
+      },
+      {
+        question: "Why does the wrap-then-decrypt attack work even though the target key has CKA_SENSITIVE = true and CKA_EXTRACTABLE = false?",
+        options: [
+          "The attacker never asks the token to export the target key directly — they wrap it, then separately decrypt the wrapped blob using the wrapping key's own decrypt capability",
+          "Those attributes only block C_UnwrapKey, not C_WrapKey",
+          "CKA_SENSITIVE doesn't actually do anything in most implementations",
+          "The attack requires physical access to the token",
+        ],
+        correctIndex: 0,
+        explanation: "The target key's own attributes are never violated — the attacker exploits a second capability (CKA_DECRYPT) mistakenly left enabled on a different key, the wrapping key, to invert C_WrapKey's output.",
+      },
+      {
+        question: "What is the recommended fix for the wrap-then-decrypt attack class?",
+        options: [
+          "Disable CKA_SENSITIVE entirely so keys are easier to audit",
+          "Use a longer PIN for CKU_USER login",
+          "Give every key both CKA_WRAP and CKA_DECRYPT so behavior is consistent",
+          "Wrapping keys should carry CKA_WRAP (or CKA_UNWRAP) and nothing else — never encrypt/decrypt capability on the same key object",
+        ],
+        correctIndex: 3,
+        explanation: "Separating capabilities by key role — a dedicated wrapping key that can never also decrypt arbitrary data — closes the attack class entirely. Every major HSM hardening guide recommends this today.",
+      },
+    ],
+  },
+  {
     useCaseSlug: "pki-in-production",
     questions: [
       {

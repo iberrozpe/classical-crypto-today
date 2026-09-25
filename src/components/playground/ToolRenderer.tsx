@@ -13,6 +13,7 @@ import X3dhTool from "./X3dhTool";
 import TlsKeyScheduleTool from "./TlsKeyScheduleTool";
 import EnvelopeEncryptionTool from "./EnvelopeEncryptionTool";
 import CertRevocationTool from "./CertRevocationTool";
+import Pkcs11SessionTool from "./Pkcs11SessionTool";
 
 const toolComponents: Record<string, React.ComponentType> = {
   "aes-gcm": AesGcmTool,
@@ -28,6 +29,7 @@ const toolComponents: Record<string, React.ComponentType> = {
   "tls-key-schedule": TlsKeyScheduleTool,
   "envelope-encryption": EnvelopeEncryptionTool,
   "cert-revocation": CertRevocationTool,
+  "pkcs11-session": Pkcs11SessionTool,
 };
 
 export default function ToolRenderer({ slug }: { slug: string }) {

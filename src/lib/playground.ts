@@ -551,6 +551,58 @@ export const playgroundTools: PlaygroundTool[] = [
     ],
   },
   {
+    slug: "pkcs11-session",
+    title: "A PKCS#11 session, using real keys",
+    summary:
+      "Walk through an actual Cryptoki call sequence — login, generate a key pair, sign, and attempt to wrap a non-extractable private key — with real Web Crypto operations standing in for the hardware token.",
+    relatedModule: "rsa-public-key",
+    relatedUseCases: ["pkcs11-cryptographic-tokens"],
+    category: "Public-key",
+    howItWorks: [
+      {
+        heading: "The browser as a stand-in token",
+        body: [
+          "There's no way for a web page to reach a real HSM or smart card driver, so this tool doesn't try to simulate one. Instead, it runs a real ECDSA key pair through the browser's own Web Crypto API, narrated with the exact Cryptoki function names a real token-backed application would call in the same order — C_OpenSession, C_GenerateKeyPair, C_Sign, and so on. Every cryptographic operation you see is genuine; only the \"hardware\" is a stand-in.",
+        ],
+      },
+      {
+        heading: "extractable is CKA_EXTRACTABLE",
+        body: [
+          "Clicking \"Generate key pair\" calls crypto.subtle.generateKey with the private key's extractable flag set to false — the browser's direct equivalent of a token creating an object with CKA_EXTRACTABLE = false. This isn't cosmetic: the browser itself will now refuse any attempt to export or wrap that specific key handle, for the rest of the page's life. Nothing in this tool's own code enforces that refusal — the underlying platform does, exactly like a real token's firmware would.",
+        ],
+      },
+      {
+        heading: "C_Sign works; C_WrapKey doesn't",
+        body: [
+          "Signing (C_SignInit + C_Sign in Cryptoki terms) works normally — using a non-extractable key for its intended operation is exactly what CKA_EXTRACTABLE = false is meant to allow. But clicking \"Attempt C_WrapKey\" calls crypto.subtle.wrapKey on that same private key handle, which throws — a real InvalidAccessError, not a message this tool invented. That's the identical refusal (CKR_KEY_UNEXTRACTABLE) a correctly configured token gives when an application asks it to do something CKA_EXTRACTABLE was specifically set to prevent.",
+        ],
+        diagram: {
+          type: "compare",
+          left: {
+            title: "What CKA_EXTRACTABLE = false allows",
+            points: [
+              "Sign, verify, encrypt, decrypt — using the key, as many times as needed",
+              "Generating new key pairs, indefinitely",
+            ],
+          },
+          right: {
+            title: "What it blocks — no exceptions",
+            points: [
+              "Exporting the raw key value, in any format",
+              "Wrapping the key under another key — wrapping is still a form of export",
+            ],
+          },
+        },
+      },
+      {
+        heading: "The correct way to move a key off the token",
+        body: [
+          "The last section generates a separate, ordinary AES data key with extractable: true — the equivalent of a session key that's meant to be exported — and wraps that one successfully with AES-KW, the same mechanism used in the key-wrapping use case. This is the actual PKCS#11 pattern for moving key material: never make a long-lived private signing key extractable; generate short-lived, extractable session keys instead, and wrap only those.",
+        ],
+      },
+    ],
+  },
+  {
     slug: "x3dh",
     title: "X3DH: key agreement while offline",
     summary:

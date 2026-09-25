@@ -128,6 +128,15 @@ export const referenceGroups: ReferenceGroup[] = [
         publisher: "OASIS Standard",
         url: "https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf",
       },
+      {
+        title: "PKCS #11 Cryptographic Token Interface Base Specification Version 3.0",
+        publisher: "OASIS Standard",
+        url: "https://docs.oasis-open.org/pkcs11/pkcs11-base/v3.0/pkcs11-base-v3.0.html",
+        note: "The current Cryptoki specification: the object model, attributes (CKA_SENSITIVE, CKA_EXTRACTABLE), and the full function list this site's PKCS#11 use case and Playground tool are built from.",
+      },
+      { title: "RFC 8017 — PKCS #1: RSA Cryptography Specifications Version 2.2", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8017" },
+      { title: "RFC 5958 — Asymmetric Key Packages (PKCS #8)", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc5958" },
+      { title: "RFC 7292 — PKCS #12: Personal Information Exchange Syntax v1.1", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc7292" },
     ],
   },
   {

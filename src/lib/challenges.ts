@@ -3,7 +3,8 @@ export type ChallengeCategory =
   | "Classical Ciphers"
   | "Symmetric-key"
   | "RSA"
-  | "Diffie-Hellman & ECC";
+  | "Diffie-Hellman & ECC"
+  | "Key Management";
 
 export type ChallengeDifficulty = "easy" | "medium" | "hard";
 
@@ -25,6 +26,7 @@ export interface Challenge {
   flag: string;
   explanation: string[];
   relatedModules?: string[];
+  relatedUseCases?: string[];
 }
 
 export const categoryOrder: ChallengeCategory[] = [
@@ -33,6 +35,7 @@ export const categoryOrder: ChallengeCategory[] = [
   "Symmetric-key",
   "RSA",
   "Diffie-Hellman & ECC",
+  "Key Management",
 ];
 
 export const challenges: Challenge[] = [
@@ -441,6 +444,38 @@ export const challenges: Challenge[] = [
       "Computing successive multiples of G by hand — 2G=(6,3), 3G=(10,6), ..., all the way to 14G=(9,1) — finds the match at k = 14 within 19 possible values, trivial at this toy scale. The identical computation over a real 256-bit curve is the elliptic curve discrete logarithm problem, and the reason it's infeasible there isn't a different algorithm — it's that the search space grows from 19 possibilities to roughly 2²⁵⁶, exactly the point the ECC module's \"brute-forcing a small elliptic curve discrete log\" section makes.",
     ],
     relatedModules: ["elliptic-curve-cryptography"],
+  },
+
+  // ---------------------------------------------------------------------
+  // Key Management
+  // ---------------------------------------------------------------------
+  {
+    slug: "pkcs11-wrap-then-decrypt",
+    title: "Wrap, Then Decrypt",
+    category: "Key Management",
+    difficulty: "hard",
+    points: 65,
+    summary: "A token's wrapping key was also given decrypt rights. That single misconfiguration is enough to extract a key that was never supposed to leave.",
+    prompt: [
+      "A token holds a symmetric key, K2, configured with both CKA_WRAP and CKA_DECRYPT set to true — a real, documented PKCS#11 misconfiguration. It also holds a second, sensitive key marked CKA_SENSITIVE = true and CKA_EXTRACTABLE = false, which should never be readable in the clear.",
+      "An application with API access (but no way to directly read CKA_SENSITIVE objects) called C_WrapKey on the sensitive key using K2 and mechanism CKM_AES_CBC_PAD, producing the wrapped blob below. You have K2 and the IV used for that call.",
+      "Recover the sensitive key's value — it's the flag.",
+    ],
+    data: [
+      { label: "K2 (AES-256 wrapping key, hex)", value: "a42a2fde0f4622cc162cdf8bb87b2e94181f75b60a561e333e09b7383a5428de" },
+      { label: "IV (hex)", value: "808496962f1a599d3231ac0244fdf696" },
+      { label: "Wrapped blob (hex)", value: "2dafc2d9de247073064a8b8fba9cee654c07a9a5a76e508c4fca53eb6722c5802b0a5ea4c305a51a744c2f7424a2bbcf" },
+    ],
+    hints: [
+      "CKM_AES_CBC_PAD wrapping is nothing more exotic than AES-256-CBC encryption with PKCS#7 padding, keyed by the wrapping key, using the supplied IV.",
+      "K2 also has CKA_DECRYPT = true. Decrypt the wrapped blob directly with K2 and that same IV, using the identical mechanism (AES-256-CBC, PKCS#7 padding) — that's exactly what C_Decrypt would do.",
+    ],
+    flag: "cct{wr4p_th3n_d3crypt_br34ks_s3nsitiv3_k3ys}",
+    explanation: [
+      "CKM_AES_CBC_PAD key wrapping is just AES-256-CBC encryption of the target key's raw bytes, with PKCS#7 padding — nothing about it is one-way or MAC-protected. C_WrapKey(K2, targetKey) therefore produced ciphertext = AES-256-CBC-Encrypt(K2, IV, targetKeyBytes). Because K2 was also left with CKA_DECRYPT = true, calling C_Decrypt on that exact ciphertext with the same key and IV runs the operation in reverse and returns the sensitive key's raw bytes in the clear — without ever touching CKA_SENSITIVE or CKA_EXTRACTABLE on the target key at all.",
+      "This is the wrap-then-decrypt attack described in the PKCS#11 use case, first formalized by Jolyon Clulow in 2003 and still found in real HSM misconfigurations today. The fix isn't cryptographic — it's operational: a wrapping key should carry CKA_WRAP (or CKA_UNWRAP) and nothing else, never encrypt/decrypt capability on the same key object.",
+    ],
+    relatedUseCases: ["pkcs11-cryptographic-tokens"],
   },
 ];
 

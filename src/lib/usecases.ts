@@ -191,6 +191,122 @@ export const useCases: UseCase[] = [
     ],
   },
   {
+    slug: "pkcs11-cryptographic-tokens",
+    title: "PKCS#11: the standard behind every HSM and smart card",
+    summary:
+      "Wrapping and unwrapping keys, covered so far, all happens somewhere. PKCS#11 is the standard interface that lets an application talk to that somewhere — an HSM, a smart card, a USB token — without caring which vendor built it.",
+    minutes: 24,
+    category: "Key Management",
+    tags: ["developer", "architect", "itops", "researcher"],
+    relatedModules: ["symmetric-key-aes", "rsa-public-key", "rsa-padding-oaep-pkcs1"],
+    sections: [
+      {
+        heading: "The PKCS family: one numbered standard per job",
+        body: [
+          "PKCS — the Public-Key Cryptography Standards — is a set of specifications originally published by RSA Laboratories starting in 1991, most of which now live on as IETF RFCs or OASIS standards. Each one solves one specific, narrow interoperability problem: how to format an RSA key, how to bundle a certificate with its private key, how to ask a hardware token to sign something. You'll run into several of these by name without necessarily knowing it — a browser's \"Export as .p12\" button, for instance, is PKCS#12.",
+          "This use case focuses on one member of that family in depth — PKCS#11 — because it's the one that governs how software talks to physical security hardware, which is a different kind of problem than the others: not a file format, but a live, stateful API.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "The PKCS family, briefly",
+          blocks: [
+            { label: "PKCS#1", detail: "RSA encryption and signature padding (RSAES-OAEP, RSASSA-PSS) — covered in the RSA module." },
+            { label: "PKCS#3", detail: "Diffie-Hellman key agreement parameters." },
+            { label: "PKCS#5 / #12", detail: "Password-based key derivation (PBKDF2), and bundling a cert + private key into one password-protected file (.p12/.pfx)." },
+            { label: "PKCS#7 / CMS", detail: "Cryptographic Message Syntax — signed and enveloped data, the format behind S/MIME and most code-signing." },
+            { label: "PKCS#8", detail: "A standard syntax for storing a private key, with or without encryption." },
+            { label: "PKCS#9", detail: "Extra attribute types usable inside other PKCS structures (e.g. a certificate request's extensions)." },
+            { label: "PKCS#10", detail: "Certificate Signing Request (CSR) syntax — covered in the PKI use case." },
+            { label: "PKCS#11", detail: "\"Cryptoki\" — a vendor-neutral API for talking to hardware security tokens (this use case)." },
+            { label: "PKCS#15", detail: "A standard way to organize keys and certificates on a token, layered on top of PKCS#11." },
+          ],
+        },
+      },
+      {
+        heading: "The problem PKCS#11 actually solves",
+        body: [
+          "Before PKCS#11 (first published in 1995, now maintained by OASIS as version 3.0), every hardware security module and smart card vendor shipped its own proprietary API. An application that wanted to use a Thales HSM, a Luna HSM, and a Gemalto smart card needed three separate integrations — and swapping a hardware vendor meant rewriting the integration, not just reconfiguring it.",
+          "PKCS#11 — formally titled \"Cryptographic Token Interface\" and nicknamed Cryptoki (\"cryptographic token interface,\" pronounced \"crypto-key\") — fixes this by standardizing the API itself: a fixed set of C function calls (C_GenerateKeyPair, C_Sign, C_WrapKey, and so on) that every conforming token exposes identically, regardless of what's actually inside the box. An application written against Cryptoki works against any PKCS#11-compliant token without modification. This is exactly why AWS CloudHSM, Azure Dedicated HSM, Google Cloud HSM, and on-premises HSMs from Thales and Entrust all expose a PKCS#11 interface as one of their supported integration paths.",
+        ],
+      },
+      {
+        heading: "The object model: slots, sessions, and objects",
+        body: [
+          "Cryptoki organizes everything around four concepts that stay the same across every implementation. A slot is a logical socket — a smart card reader, or a virtual slot on an HSM appliance. A token is the actual security device sitting in that slot, holding keys and certificates. A session is a connection an application opens to a token, roughly like a database connection, which carries a login state (public, or authenticated as a regular user or a security officer). And an object is anything the token stores and hands back a reference to — a key, a certificate, or arbitrary data — identified by an opaque handle, never by its raw value.",
+          "That last point is the whole security model in one sentence: an application never receives the actual bytes of a private or secret key. It receives a handle — an integer — and asks the token to perform operations (sign, decrypt, wrap) using the key that handle refers to. The key material itself never has to leave the hardware boundary at all.",
+        ],
+        diagram: {
+          type: "structure",
+          title: "Cryptoki's object hierarchy",
+          blocks: [
+            { label: "Slot", detail: "A logical socket for a token — a card reader, or a virtual slot on an HSM appliance." },
+            { label: "Token", detail: "The actual security hardware in that slot, holding objects and enforcing a login state." },
+            { label: "Session", detail: "An application's open connection to a token — logged out, CKU_USER, or CKU_SO (security officer)." },
+            { label: "Object", detail: "A key, certificate, or data item on the token, referenced only by an opaque handle — never by its raw value." },
+          ],
+        },
+      },
+      {
+        heading: "A typical session, function by function",
+        body: [
+          "Every Cryptoki interaction follows the same rough shape, whether the token is a $10 USB key or a rack-mounted HSM protecting a bank's signing keys. The Playground's PKCS#11 tool below runs a real version of exactly this sequence — using actual Web Crypto operations standing in for the hardware token.",
+        ],
+        diagram: {
+          type: "sequence",
+          title: "Signing something with a token-resident key",
+          steps: [
+            { label: "C_OpenSession", detail: "The application opens a session against a slot's token." },
+            { label: "C_Login", detail: "Authenticates the session as CKU_USER, unlocking access to private/secret objects (public objects are readable even logged out)." },
+            { label: "C_GenerateKeyPair", detail: "The token generates a key pair internally and returns two handles — the private key never exists outside the token." },
+            { label: "C_SignInit / C_Sign", detail: "The application asks the token to sign data using the private key's handle; only the signature comes back." },
+            { label: "C_CloseSession", detail: "The session ends. Nothing sensitive was ever transmitted in the clear." },
+          ],
+        },
+      },
+      {
+        heading: "Attributes: the access-control layer on every object",
+        body: [
+          "Every object carries a set of attributes (named CKA_*) that control what can be done with it, enforced by the token itself — not by the calling application, which is exactly the point. Two matter most for security: CKA_SENSITIVE, which means the value can never be read back in the clear once set, and CKA_EXTRACTABLE, which controls whether the key can ever leave the token at all (even wrapped). A private signing key on a well-configured token is created with CKA_SENSITIVE = true and CKA_EXTRACTABLE = false: it can be used to sign, forever, but it can never be exported — not by the application, not by an administrator, not even by the vendor.",
+          "This maps directly onto something you've already used: the Web Crypto API's own generateKey takes an `extractable` boolean, for exactly the same reason. Setting it to false on a private key means the browser itself will refuse to export or wrap that key — real enforcement, not a label. The Playground tool below relies on this directly.",
+        ],
+        practice: [
+          {
+            prompt: "A token-resident RSA private key is created with CKA_SENSITIVE = true and CKA_EXTRACTABLE = false. An administrator with full physical access to the HSM appliance wants to copy that key onto a second HSM for backup. Can they extract it in the clear via the PKCS#11 API?",
+            hint: "CKA_EXTRACTABLE controls whether the key can ever leave the token in any form, including wrapped.",
+            placeholder: "yes or no",
+            answer: "no",
+            explanation: "No — CKA_EXTRACTABLE = false means the API will refuse every operation that would let the key leave the token, including C_WrapKey. This is by design: it's what lets an organization credibly claim a key exists in exactly one place. (Real HSMs do offer separate, more tightly controlled cloning mechanisms for legitimate backup between paired devices — but the ordinary PKCS#11 API surface is not one of them.)",
+          },
+        ],
+      },
+      {
+        heading: "Where you've already used PKCS#11 without knowing it",
+        body: [
+          "A government PIV or CAC smart card authenticating you to a workstation, a YubiKey holding an SSH or code-signing key, a browser's client-certificate login to a corporate VPN, a certificate authority's root key living in an HSM instead of a file — all of these typically go through a PKCS#11 module under the hood. Windows' CNG and macOS's Keychain both support loading third-party PKCS#11 providers; OpenSSL, Java's JCA, and most CA software (like step-ca or EJBCA) support it natively as a plug-in backend for exactly this reason: it's the one integration path that works across HSM vendors without rewriting anything.",
+        ],
+      },
+      {
+        heading: "When the API itself is the vulnerability",
+        body: [
+          "Cryptoki's attribute model is only as strong as how a given deployment actually assigns attributes — and a well-documented class of attacks, first formalized by Jolyon Clulow in 2003, shows what goes wrong when a single key is given two capabilities that should never coexist. The classic case: a symmetric key configured with both CKA_WRAP and CKA_DECRYPT set to true.",
+          "C_WrapKey, in its simplest mechanisms (like CKM_AES_CBC_PAD), does nothing more exotic than encrypt the target key's raw bytes with the wrapping key. If that same wrapping key also has decrypt rights, an attacker who can merely call the API — with no need to touch the token's internals — can wrap a sensitive, non-extractable key, then immediately call C_Decrypt on the very blob C_WrapKey just produced, using the identical key and mechanism. The token faithfully decrypts it, and out comes the \"non-extractable\" key's raw bytes in the clear. CKA_SENSITIVE and CKA_EXTRACTABLE never came into play at all — the attacker never asked the token to export the target key, only to wrap it and then separately decrypt something.",
+          "The fix is a discipline, not a patch: wrapping keys should carry CKA_WRAP (or CKA_UNWRAP) and nothing else — never CKA_ENCRYPT/CKA_DECRYPT on the same key object. Every serious HSM vendor's hardening guide says this explicitly today, precisely because so many real deployments got it wrong before the attack class was widely known. The Challenges section has a hands-on version of this exact attack — recovering a \"sensitive\" key by exploiting a wrapping key that was also left with decrypt rights.",
+          "Try it yourself in the Playground below: generating a signing key pair with the private key's extractable flag set to false, then watching a real wrapKey() call on that handle fail — the same refusal a correctly configured token gives, for the same reason.",
+        ],
+        advanced: true,
+        practice: [
+          {
+            prompt: "A token has an AES key with CKA_WRAP = true and CKA_DECRYPT = true (the misconfiguration). An attacker legitimately calls C_WrapKey to wrap a separate, non-extractable AES key they want to steal. What PKCS#11 function do they call next to recover it in the clear?",
+            hint: "The wrapping key's OTHER enabled capability is what makes this attack possible.",
+            placeholder: "C_ function name",
+            answer: "C_Decrypt",
+            explanation: "C_Decrypt (after C_DecryptInit) — using the same wrapping key and mechanism used to produce the wrapped blob. Since simple wrap mechanisms like CKM_AES_CBC_PAD are just encryption, decrypting the wrapped blob with the same key that wrapped it recovers the target key's raw bytes directly, completely bypassing CKA_SENSITIVE and CKA_EXTRACTABLE on the target key.",
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "pki-in-production",
     title: "Running a PKI: how a certificate authority actually operates",
     summary:

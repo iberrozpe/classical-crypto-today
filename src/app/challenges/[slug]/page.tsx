@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { challenges, getChallenge } from "@/lib/challenges";
 import { getModule } from "@/lib/content";
+import { getUseCase } from "@/lib/usecases";
 import { OutputBox } from "@/components/playground/ui";
 import ChallengeSolver from "@/components/ChallengeSolver";
 
@@ -36,6 +37,9 @@ export default async function ChallengePage(props: PageProps<"/challenges/[slug]
   const relatedModules = (challenge.relatedModules ?? [])
     .map((s) => getModule(s))
     .filter((m) => m !== undefined);
+  const relatedUseCases = (challenge.relatedUseCases ?? [])
+    .map((s) => getUseCase(s))
+    .filter((u) => u !== undefined);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -72,7 +76,7 @@ export default async function ChallengePage(props: PageProps<"/challenges/[slug]
 
       <ChallengeSolver challenge={challenge} />
 
-      {relatedModules.length > 0 && (
+      {(relatedModules.length > 0 || relatedUseCases.length > 0) && (
         <div className="mt-10 rounded-lg border border-border bg-surface p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             Background on this technique
@@ -85,6 +89,15 @@ export default async function ChallengePage(props: PageProps<"/challenges/[slug]
                 className="rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-xs font-medium text-accent transition hover:border-accent"
               >
                 {m.title} →
+              </Link>
+            ))}
+            {relatedUseCases.map((u) => (
+              <Link
+                key={u.slug}
+                href={`/use-cases/${u.slug}`}
+                className="rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-xs font-medium text-accent transition hover:border-accent"
+              >
+                {u.title} →
               </Link>
             ))}
           </div>

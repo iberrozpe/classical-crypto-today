@@ -9,6 +9,7 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-09-25",
     title: "Challenges, site-wide search, and a new Use Cases section",
     items: [
+      "Added a PKCS use case: an overview of the PKCS standards family plus an in-depth look at PKCS#11 (Cryptoki) — object attributes, the wrap-then-decrypt API attack, a real-key Playground tool, and a hands-on Challenges puzzle exploiting the same attack",
       "Launched a Challenges section: 16 hands-on CTF-style puzzles across Warm-up, Classical Ciphers, Symmetric-key, RSA, and Diffie-Hellman/ECC, each checked entirely in the browser with hints, a points total, and local-only progress tracking",
       "Added a site-wide search: a ⌘K/Ctrl+K command palette indexing every module, use case, playground tool, glossary term, and now challenge",
       "Fixed the Navigate graph erroring with \"This page couldn't load\" when panning on Chrome, Firefox, and Edge — a browser swipe-navigation gesture conflict",
