@@ -61,6 +61,7 @@ export default function NavigateGraph({
   const [links, setLinks] = useState<{ source: SimNode; target: SimNode }[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -119,6 +120,21 @@ export default function NavigateGraph({
     }
     return set;
   }, [links, hoverId, selectedId]);
+
+  function toggleCategory(cat: string) {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
+
+  function isNodeDimmed(n: SimNode) {
+    if (selectedCategories.size > 0 && !selectedCategories.has(n.category)) return true;
+    if (connectedIds && !connectedIds.has(n.id)) return true;
+    return false;
+  }
 
   function clientToWorld(clientX: number, clientY: number) {
     const svg = svgRef.current;
@@ -196,13 +212,38 @@ export default function NavigateGraph({
 
   return (
     <div className="mt-8">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
-        {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
-          <span key={cat} className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-            {cat}
-          </span>
-        ))}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-muted">
+        {Object.entries(CATEGORY_COLORS).map(([cat, color]) => {
+          const active = selectedCategories.has(cat);
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => toggleCategory(cat)}
+              aria-pressed={active}
+              className={`flex items-center gap-1.5 rounded-full border px-2 py-1 transition ${
+                active
+                  ? "border-current"
+                  : selectedCategories.size > 0
+                    ? "border-transparent opacity-40 hover:opacity-70"
+                    : "border-transparent hover:border-border"
+              }`}
+              style={active ? { color, background: `${color}1a` } : undefined}
+            >
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
+              <span className={active ? "font-medium" : ""}>{cat}</span>
+            </button>
+          );
+        })}
+        {selectedCategories.size > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelectedCategories(new Set())}
+            className="text-muted underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-accent"
+          >
+            Clear
+          </button>
+        )}
         <span className="ml-auto text-muted">Drag to pan · scroll to zoom · drag a node to reposition it</span>
       </div>
 
@@ -218,7 +259,7 @@ export default function NavigateGraph({
         >
           <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}>
             {links.map((l, i) => {
-              const dimmed = connectedIds ? !(connectedIds.has(l.source.id) && connectedIds.has(l.target.id)) : false;
+              const dimmed = isNodeDimmed(l.source) || isNodeDimmed(l.target);
               return (
                 <line
                   key={i}
@@ -236,7 +277,7 @@ export default function NavigateGraph({
             {nodes.map((n) => {
               const r = radiusFor(n.type);
               const color = CATEGORY_COLORS[n.category] ?? "var(--accent)";
-              const dimmed = connectedIds ? !connectedIds.has(n.id) : false;
+              const dimmed = isNodeDimmed(n);
               const isSelected = n.id === selectedId;
               return (
                 <g
