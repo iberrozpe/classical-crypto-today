@@ -50,6 +50,20 @@ function typeLabel(type: GraphNode["type"]) {
   return "Playground tool";
 }
 
+// setPointerCapture can throw (e.g. NotFoundError) if the browser's own
+// gesture/scroll recognizer has already invalidated the pointer session by
+// the time this runs — confirmed to happen in real drags, not just theory.
+// Uncaught, that exception crashes the whole page (this app has no error
+// boundary): dragging just doesn't lock onto the pointer that one time,
+// rather than tearing down the tree.
+function trySetPointerCapture(el: Element, pointerId: number) {
+  try {
+    el.setPointerCapture(pointerId);
+  } catch {
+    // ignore
+  }
+}
+
 export default function NavigateGraph({
   nodes: rawNodes,
   links: rawLinks,
@@ -160,7 +174,7 @@ export default function NavigateGraph({
 
   function onNodePointerDown(e: React.PointerEvent, id: string) {
     e.stopPropagation();
-    (e.target as Element).setPointerCapture(e.pointerId);
+    trySetPointerCapture(e.target as Element, e.pointerId);
     drag.current = { id, moved: false, startX: e.clientX, startY: e.clientY };
   }
 
@@ -172,12 +186,17 @@ export default function NavigateGraph({
     if (!drag.current.moved) return;
 
     const world = clientToWorld(e.clientX, e.clientY);
+    const draggedId = drag.current.id;
     setNodes((prev) => {
+      // Read the dragged id from a local captured above, not drag.current
+      // itself — React can batch/defer this updater, and by the time it
+      // runs, a pointerup in between may have already nulled drag.current
+      // out, which crashed the whole page with no error boundary in place.
       // Mutate the node in place rather than replacing it with a new object —
       // the links array's source/target were resolved by d3-force to these
       // exact node instances, so swapping in a copy would leave rendered
       // lines pointing at the node's old, stale position forever.
-      const node = prev.find((n) => n.id === drag.current!.id);
+      const node = prev.find((n) => n.id === draggedId);
       if (node) {
         node.x = world.x;
         node.y = world.y;
@@ -199,7 +218,7 @@ export default function NavigateGraph({
   function onBackgroundPointerDown(e: React.PointerEvent) {
     e.preventDefault();
     pan.current = { startX: e.clientX, startY: e.clientY, origX: transform.x, origY: transform.y, moved: false };
-    (e.target as Element).setPointerCapture(e.pointerId);
+    trySetPointerCapture(e.target as Element, e.pointerId);
   }
 
   function onBackgroundPointerMove(e: React.PointerEvent) {
@@ -209,7 +228,12 @@ export default function NavigateGraph({
     const dy = e.clientY - pan.current.startY;
     if (Math.hypot(dx, dy) > CLICK_THRESHOLD) pan.current.moved = true;
     if (!pan.current.moved) return;
-    setTransform((t) => ({ ...t, x: pan.current!.origX + dx, y: pan.current!.origY + dy }));
+    // Same reasoning as onNodePointerMove: capture before queuing the
+    // updater, not pan.current!.origX inside it, since a pointerup can null
+    // pan.current out before a batched update actually runs.
+    const origX = pan.current.origX;
+    const origY = pan.current.origY;
+    setTransform((t) => ({ ...t, x: origX + dx, y: origY + dy }));
   }
 
   function onBackgroundPointerUp() {
