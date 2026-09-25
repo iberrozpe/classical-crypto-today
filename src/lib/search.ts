@@ -2,9 +2,10 @@ import { modules } from "./content";
 import { useCases } from "./usecases";
 import { playgroundTools } from "./playground";
 import { glossaryTerms } from "./glossary";
+import { challenges } from "./challenges";
 import { slugify } from "./slugify";
 
-export type SearchEntryType = "module" | "usecase" | "tool" | "glossary" | "section";
+export type SearchEntryType = "module" | "usecase" | "tool" | "glossary" | "section" | "challenge";
 
 export interface SearchEntry {
   type: SearchEntryType;
@@ -62,6 +63,16 @@ function buildIndex(): SearchEntry[] {
       title: t.title,
       subtitle: t.summary,
       href: `/playground/${t.slug}`,
+    });
+  }
+
+  for (const c of challenges) {
+    entries.push({
+      type: "challenge",
+      typeLabel: "Challenge",
+      title: c.title,
+      subtitle: c.summary,
+      href: `/challenges/${c.slug}`,
     });
   }
 

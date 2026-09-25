@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { getModule } from "@/lib/content";
 import { getPlaygroundTool } from "@/lib/playground";
 import { getUseCase } from "@/lib/usecases";
+import { getChallenge } from "@/lib/challenges";
 
 const STATIC_LABELS: Record<string, string> = {
   explore: "Explore",
   learn: "Learn",
   "use-cases": "Use Cases",
   playground: "Playground",
+  challenges: "Challenges",
   compare: "Compare",
   glossary: "Glossary",
   "migration-checklist": "Checklist",
@@ -48,6 +50,8 @@ export default function Breadcrumb() {
       label = getPlaygroundTool(seg)?.title ?? seg;
     } else if (!label && prev === "use-cases") {
       label = getUseCase(seg)?.title ?? seg;
+    } else if (!label && prev === "challenges") {
+      label = getChallenge(seg)?.title ?? seg;
     } else if (!label) {
       label = seg;
     }

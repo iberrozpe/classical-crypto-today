@@ -5,6 +5,7 @@ import { modules } from "@/lib/content";
 import { playgroundTools } from "@/lib/playground";
 import { glossaryTerms } from "@/lib/glossary";
 import { useCases } from "@/lib/usecases";
+import { challenges } from "@/lib/challenges";
 
 export const metadata: Metadata = {
   title: "About — Classical Crypto Today",
@@ -16,6 +17,7 @@ const sections = [
   { href: "/learn", title: "Learn", body: `${modules.length} modules, from the history of cryptography through RSA, ECC, AES, TLS, and the post-quantum threat, each with diagrams, worked examples, and real formulas.` },
   { href: "/use-cases", title: "Use Cases", body: `${useCases.length} deep dives into how those primitives combine in production — envelope encryption, key wrapping, running a PKI, OAuth2/OIDC/SAML — each linking back to Learn instead of re-explaining the math.` },
   { href: "/playground", title: "Playground", body: `${playgroundTools.length} tools that run real cryptography in your browser via the Web Crypto API — AES-GCM, RSA-OAEP, ECDSA, X3DH, and more. Nothing is simulated, and nothing leaves your browser.` },
+  { href: "/challenges", title: "Challenges", body: `${challenges.length} CryptoHack/Cryptopals-style puzzles — recover a hidden flag by breaking a classical cipher, an XOR mistake, or a flawed RSA/Diffie-Hellman setup. Checked and tracked entirely in your browser, with no accounts or leaderboard.` },
   { href: "/navigate", title: "Navigate", body: "Every module, tool, and category as a single connected graph, for when you'd rather explore by clicking around than by reading a list." },
   { href: "/compare", title: "Compare", body: "Side-by-side cheat sheets — RSA vs. ECC vs. Diffie-Hellman, AES modes, hash functions — for when you already know the material and just need the numbers." },
   { href: "/glossary", title: "Glossary", body: `${glossaryTerms.length} terms used across the site, defined plainly and linked back to the module that covers each one in depth.` },

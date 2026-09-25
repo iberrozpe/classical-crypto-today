@@ -139,4 +139,12 @@ export const referenceGroups: ReferenceGroup[] = [
       { title: "SP 800-57 Part 1 Rev. 5 — Recommendation for Key Management", publisher: "NIST", url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final", note: "Source of the key-size/security-level equivalence table used in this catalog." },
     ],
   },
+  {
+    heading: "Further hands-on practice",
+    intro: "This site's Challenges section draws its format and flag convention from these two long-running cryptography CTF sites — both excellent next steps once you've worked through the challenges here.",
+    references: [
+      { title: "CryptoHack", publisher: "CryptoHack", url: "https://cryptohack.org/", note: "A categorized library of cryptography challenges, from classical ciphers through elliptic curves and real-world protocol flaws." },
+      { title: "Cryptopals Crypto Challenges", publisher: "Cryptopals", url: "https://cryptopals.com/", note: "A structured set of exercises, organized into progressive sets, that build real attacks against AES, RSA, Diffie-Hellman, and more from scratch." },
+    ],
+  },
 ];

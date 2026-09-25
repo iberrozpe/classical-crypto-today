@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/explore"
           className="rounded-lg border border-border p-6 transition hover:border-accent"
@@ -102,6 +102,15 @@ export default function Home() {
           <p className="mt-2 text-sm text-muted">
             Real cryptography running in your browser — encrypt, sign, and verify with the Web
             Crypto API.
+          </p>
+        </Link>
+        <Link
+          href="/challenges"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Challenges</h3>
+          <p className="mt-2 text-sm text-muted">
+            Break real ciphers and implementation mistakes yourself, and recover the flag as proof.
           </p>
         </Link>
         <Link

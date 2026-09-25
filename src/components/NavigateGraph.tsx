@@ -23,6 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Protocols: "#38bdf8",
   Practice: "#fb7185",
   "Use Cases": "#4ade80",
+  Challenges: "#f472b6",
 };
 
 const WIDTH = 900;
@@ -35,12 +36,14 @@ function radiusFor(type: GraphNode["type"]) {
   if (type === "category") return 16;
   if (type === "module") return 9;
   if (type === "usecase") return 8;
+  if (type === "challenge") return 7;
   return 6;
 }
 
 function typeLabel(type: GraphNode["type"]) {
   if (type === "module") return "Learn module";
   if (type === "usecase") return "Use case";
+  if (type === "challenge") return "Challenge";
   return "Playground tool";
 }
 
@@ -290,7 +293,7 @@ export default function NavigateGraph({
             {selected.summary && <p className="mt-2 text-sm text-muted">{selected.summary}</p>}
             {selected.href && (
               <Link href={selected.href} className="mt-3 inline-block text-sm font-medium text-accent underline underline-offset-4">
-                Open {selected.type === "module" ? "module" : selected.type === "usecase" ? "use case" : "tool"} →
+                Open {selected.type === "module" ? "module" : selected.type === "usecase" ? "use case" : selected.type === "challenge" ? "challenge" : "tool"} →
               </Link>
             )}
           </div>

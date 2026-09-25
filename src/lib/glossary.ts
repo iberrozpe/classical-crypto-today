@@ -137,6 +137,11 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["random-number-generation"],
   },
   {
+    term: "CTF (Capture the Flag)",
+    definition:
+      "A hands-on security competition format where solving a puzzle — breaking a cipher, exploiting a bug — recovers a hidden \"flag\" string as proof of the solve. This site's Challenges section, and reference sites like CryptoHack and Cryptopals, follow this convention.",
+  },
+  {
     term: "Curveball (CVE-2020-0601)",
     definition:
       "A 2020 Windows CryptoAPI vulnerability that let an attacker forge a trusted ECDSA certificate by substituting a crafted elliptic-curve base point, without ever learning the real private key — the vulnerable verifier checked the public key's value but not that the curve's generator matched the standard one.",
@@ -231,6 +236,11 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "A block cipher structure that splits each block in half and repeatedly transforms one half using the other, keyed by a round function — decryption reuses the identical network with round keys applied in reverse, regardless of the round function's complexity. DES is the canonical example; AES uses a different structure instead.",
     relatedModules: ["des-data-encryption-standard"],
+  },
+  {
+    term: "Flag (challenge)",
+    definition:
+      "The proof-of-solve string a CTF-style challenge asks for, conventionally wrapped in a fixed prefix and braces — cct{...} on this site — so a solver can tell at a glance whether their recovered plaintext or key is actually right.",
   },
   {
     term: "Forward secrecy",

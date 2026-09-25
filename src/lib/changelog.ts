@@ -6,6 +6,19 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-09-25",
+    title: "Challenges, site-wide search, and a new Use Cases section",
+    items: [
+      "Launched a Challenges section: 16 hands-on CTF-style puzzles across Warm-up, Classical Ciphers, Symmetric-key, RSA, and Diffie-Hellman/ECC, each checked entirely in the browser with hints, a points total, and local-only progress tracking",
+      "Added a site-wide search: a ⌘K/Ctrl+K command palette indexing every module, use case, playground tool, glossary term, and now challenge",
+      "Fixed the Navigate graph erroring with \"This page couldn't load\" when panning on Chrome, Firefox, and Edge — a browser swipe-navigation gesture conflict",
+      "Added a link to About in the left navigation",
+      "Added three real-cryptography Playground tools: a TLS key schedule walkthrough, KMS envelope encryption, and certificate revocation checking",
+      "Expanded the TLS and JWT Learn modules with session resumption, 0-RTT trade-offs, SNI/ECH, revocation and refresh tokens, JWKS, and the \"alg: none\" attack",
+      "Added a new top-level Use Cases section covering KMS envelope encryption, key wrapping & exchange, PKI in production, and federated identity (OAuth2/OIDC/SAML) — each with a 10-question quiz",
+    ],
+  },
+  {
     date: "2026-09-24",
     title: "Breadth, new sections, and a full quiz bank",
     items: [

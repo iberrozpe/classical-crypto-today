@@ -1,11 +1,12 @@
 import { modules } from "./content";
 import { playgroundTools } from "./playground";
 import { useCases } from "./usecases";
+import { challenges } from "./challenges";
 
 export interface GraphNode {
   id: string;
   label: string;
-  type: "category" | "module" | "tool" | "usecase";
+  type: "category" | "module" | "tool" | "usecase" | "challenge";
   category: string;
   href?: string;
   summary?: string;
@@ -69,6 +70,20 @@ export function buildGraph(): { nodes: GraphNode[]; links: GraphLink[] } {
     });
     for (const relatedSlug of u.relatedModules) {
       links.push({ source: `module:${relatedSlug}`, target: `usecase:${u.slug}` });
+    }
+  }
+
+  for (const c of challenges) {
+    nodes.push({
+      id: `challenge:${c.slug}`,
+      label: c.title,
+      type: "challenge",
+      category: "Challenges",
+      href: `/challenges/${c.slug}`,
+      summary: c.summary,
+    });
+    for (const relatedSlug of c.relatedModules ?? []) {
+      links.push({ source: `module:${relatedSlug}`, target: `challenge:${c.slug}` });
     }
   }
 
