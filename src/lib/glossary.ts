@@ -238,6 +238,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["des-data-encryption-standard"],
   },
   {
+    term: "FIPS (Federal Information Processing Standard)",
+    definition:
+      "A NIST publication that's mandatory for US federal systems — where algorithms like AES (FIPS 197) and the post-quantum standards (FIPS 203/204/205) actually live, as opposed to NIST's SP 800 series, which is guidance rather than a hard specification.",
+    relatedModules: ["nist"],
+  },
+  {
     term: "Flag (challenge)",
     definition:
       "The proof-of-solve string a CTF-style challenge asks for, conventionally wrapped in a fixed prefix and braces — cct{...} on this site — so a solver can tell at a glance whether their recovered plaintext or key is actually right.",
@@ -293,6 +299,18 @@ export const glossaryTerms: GlossaryTerm[] = [
     term: "HSM (Hardware Security Module)",
     definition:
       "A dedicated, tamper-resistant hardware device that generates and stores private keys and performs cryptographic operations without ever exposing the key material to the host system.",
+  },
+  {
+    term: "IETF (Internet Engineering Task Force)",
+    definition:
+      "The open, individual-participation body behind the RFC series — TLS, JWT, X.509/PKIX, SSH, OAuth2 — developed by rough consensus and running code rather than formal membership voting.",
+    relatedModules: ["ietf"],
+  },
+  {
+    term: "ISO/IEC",
+    definition:
+      "A federation of national standards bodies (ANSI, BSI, DIN, and others) that jointly publishes paywalled international standards — ISO/IEC 27001 (ISMS certification), 18033 (encryption algorithms), and 19790 (the international counterpart to FIPS 140-3), among others.",
+    relatedModules: ["iso-iec"],
   },
   {
     term: "IV (Initialization Vector)",
@@ -383,6 +401,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     relatedModules: ["digital-certificates-x509", "tls-in-practice"],
   },
   {
+    term: "NIST (National Institute of Standards and Technology)",
+    definition:
+      "A US Department of Commerce agency whose Computer Security Division publishes FIPS and SP 800 documents — AES, SHA-2/3, and the post-quantum standards all originate here, usually selected via open, multi-year public competitions.",
+    relatedModules: ["nist"],
+  },
+  {
     term: "Nonce",
     definition:
       "A value used only once — most critically, the per-encryption value in AES-GCM (which must never repeat under the same key) and the per-signature random value in ECDSA (which, if reused, directly exposes the private key).",
@@ -393,6 +417,12 @@ export const glossaryTerms: GlossaryTerm[] = [
     definition:
       "The modern, randomized padding scheme for RSA encryption, using a double-masking (MGF1-based) construction to defeat the padding-oracle attacks that plagued the older PKCS#1 v1.5 padding.",
     relatedModules: ["rsa-padding-oaep-pkcs1"],
+  },
+  {
+    term: "OASIS (Organization for the Advancement of Structured Information Standards)",
+    definition:
+      "A member-driven nonprofit consortium — not a government body — that ratifies specifications through open Technical Committees, including SAML 2.0, KMIP, and PKCS#11 (whose stewardship RSA Laboratories transferred to OASIS in the early 2010s).",
+    relatedModules: ["oasis"],
   },
   {
     term: "OAuth2",

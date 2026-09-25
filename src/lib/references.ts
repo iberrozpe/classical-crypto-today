@@ -149,6 +149,17 @@ export const referenceGroups: ReferenceGroup[] = [
     ],
   },
   {
+    heading: "Standardization bodies",
+    intro: "The organizations behind every document cited on this page, covered in their own right in the Standards section — how each one actually works, not just what it's published.",
+    references: [
+      { title: "NIST Computer Security Resource Center", publisher: "NIST", url: "https://csrc.nist.gov/", note: "Home of every FIPS and SP 800 document cited throughout this page." },
+      { title: "IETF", publisher: "Internet Engineering Task Force", url: "https://www.ietf.org/", note: "Home of the RFC series and its working groups." },
+      { title: "RFC 2119 — Key words for use in RFCs to Indicate Requirement Levels", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc2119", note: "Defines what MUST, SHOULD, and MAY mean inside every other RFC that uses them." },
+      { title: "ISO", publisher: "International Organization for Standardization", url: "https://www.iso.org/", note: "Publishes ISO/IEC 27001, 18033, 19790, and the rest of the JTC 1/SC 27 security series jointly with the IEC." },
+      { title: "OASIS Open", publisher: "OASIS", url: "https://www.oasis-open.org/", note: "Home of SAML 2.0, PKCS#11, and KMIP." },
+    ],
+  },
+  {
     heading: "Further hands-on practice",
     intro: "This site's Challenges section draws its format and flag convention from these two long-running cryptography CTF sites — both excellent next steps once you've worked through the challenges here.",
     references: [

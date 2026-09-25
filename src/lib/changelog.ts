@@ -9,6 +9,7 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-09-25",
     title: "Challenges, site-wide search, and a new Use Cases section",
     items: [
+      "Added a new Standards section covering the standardization bodies themselves — NIST, the IETF, ISO/IEC, and OASIS — how each actually works, what it's published, and a real reference for every claim; includes diagrams, practice problems, and a 10-question quiz per body (no Playground, by design)",
       "Added a Quizzes page listing every knowledge check on the site in one place, linked from the left navigation; fixed Use Case pages missing a \"Try it yourself\" link to their related Playground tool, and filled in Use Cases, Challenges, and their quizzes on the sitemap",
       "Added a PKCS use case: an overview of the PKCS standards family plus an in-depth look at PKCS#11 (Cryptoki) — object attributes, the wrap-then-decrypt API attack, a real-key Playground tool, and a hands-on Challenges puzzle exploiting the same attack",
       "Launched a Challenges section: 16 hands-on CTF-style puzzles across Warm-up, Classical Ciphers, Symmetric-key, RSA, and Diffie-Hellman/ECC, each checked entirely in the browser with hints, a points total, and local-only progress tracking",

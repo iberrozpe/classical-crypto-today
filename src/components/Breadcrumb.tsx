@@ -6,6 +6,7 @@ import { getModule } from "@/lib/content";
 import { getPlaygroundTool } from "@/lib/playground";
 import { getUseCase } from "@/lib/usecases";
 import { getChallenge } from "@/lib/challenges";
+import { getStandardsBody } from "@/lib/standards";
 
 const STATIC_LABELS: Record<string, string> = {
   explore: "Explore",
@@ -13,6 +14,7 @@ const STATIC_LABELS: Record<string, string> = {
   "use-cases": "Use Cases",
   playground: "Playground",
   challenges: "Challenges",
+  standards: "Standards",
   compare: "Compare",
   glossary: "Glossary",
   "migration-checklist": "Checklist",
@@ -53,6 +55,8 @@ export default function Breadcrumb() {
       label = getUseCase(seg)?.title ?? seg;
     } else if (!label && prev === "challenges") {
       label = getChallenge(seg)?.title ?? seg;
+    } else if (!label && prev === "standards") {
+      label = getStandardsBody(seg)?.title ?? seg;
     } else if (!label) {
       label = seg;
     }

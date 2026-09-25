@@ -3,9 +3,10 @@ import { useCases } from "./usecases";
 import { playgroundTools } from "./playground";
 import { glossaryTerms } from "./glossary";
 import { challenges } from "./challenges";
+import { standardsBodies } from "./standards";
 import { slugify } from "./slugify";
 
-export type SearchEntryType = "module" | "usecase" | "tool" | "glossary" | "section" | "challenge";
+export type SearchEntryType = "module" | "usecase" | "tool" | "glossary" | "section" | "challenge" | "standard";
 
 export interface SearchEntry {
   type: SearchEntryType;
@@ -74,6 +75,25 @@ function buildIndex(): SearchEntry[] {
       subtitle: c.summary,
       href: `/challenges/${c.slug}`,
     });
+  }
+
+  for (const s of standardsBodies) {
+    entries.push({
+      type: "standard",
+      typeLabel: "Standards",
+      title: s.title,
+      subtitle: s.summary,
+      href: `/standards/${s.slug}`,
+    });
+    for (const sec of s.sections) {
+      entries.push({
+        type: "section",
+        typeLabel: "Standards",
+        title: sec.heading,
+        subtitle: s.title,
+        href: `/standards/${s.slug}#${slugify(sec.heading)}`,
+      });
+    }
   }
 
   for (const g of glossaryTerms) {

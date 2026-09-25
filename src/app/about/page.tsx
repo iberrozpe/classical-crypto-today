@@ -8,6 +8,8 @@ import { useCases } from "@/lib/usecases";
 import { challenges } from "@/lib/challenges";
 import { quizzes } from "@/lib/quiz";
 import { useCaseQuizzes } from "@/lib/usecase-quiz";
+import { standardsBodies } from "@/lib/standards";
+import { standardsQuizzes } from "@/lib/standards-quiz";
 
 export const metadata: Metadata = {
   title: "About — Classical Crypto Today",
@@ -18,13 +20,14 @@ const sections = [
   { href: "/explore", title: "Explore", body: "Pick a persona — executive, GRC, developer, architect, IT ops, researcher, or curious — and get a reading path tailored to it. Nothing is hidden from anyone; a persona just reorders what you see first." },
   { href: "/learn", title: "Learn", body: `${modules.length} modules, from the history of cryptography through RSA, ECC, AES, TLS, and the post-quantum threat, each with diagrams, worked examples, and real formulas.` },
   { href: "/use-cases", title: "Use Cases", body: `${useCases.length} deep dives into how those primitives combine in production — envelope encryption, key wrapping, running a PKI, OAuth2/OIDC/SAML — each linking back to Learn instead of re-explaining the math.` },
+  { href: "/standards", title: "Standards", body: `${standardsBodies.length} pages on the standardization bodies themselves — NIST, the IETF, ISO/IEC, and OASIS — how each actually works, what it's published, and where the real reference document lives.` },
   { href: "/playground", title: "Playground", body: `${playgroundTools.length} tools that run real cryptography in your browser via the Web Crypto API — AES-GCM, RSA-OAEP, ECDSA, X3DH, and more. Nothing is simulated, and nothing leaves your browser.` },
   { href: "/challenges", title: "Challenges", body: `${challenges.length} CryptoHack/Cryptopals-style puzzles — recover a hidden flag by breaking a classical cipher, an XOR mistake, or a flawed RSA/Diffie-Hellman setup. Checked and tracked entirely in your browser, with no accounts or leaderboard.` },
   { href: "/navigate", title: "Navigate", body: "Every module, tool, and category as a single connected graph, for when you'd rather explore by clicking around than by reading a list." },
   { href: "/compare", title: "Compare", body: "Side-by-side cheat sheets — RSA vs. ECC vs. Diffie-Hellman, AES modes, hash functions — for when you already know the material and just need the numbers." },
   { href: "/glossary", title: "Glossary", body: `${glossaryTerms.length} terms used across the site, defined plainly and linked back to the module that covers each one in depth.` },
   { href: "/migration-checklist", title: "Checklist", body: "A practical PQC-migration inventory for GRC and architecture teams — not a compliance audit, a starting point." },
-  { href: "/quizzes", title: "Quizzes", body: `Every knowledge check on the site in one list — ${quizzes.length + useCaseQuizzes.length} quizzes across every Learn module and Use Case, with an explanation for every answer.` },
+  { href: "/quizzes", title: "Quizzes", body: `Every knowledge check on the site in one list — ${quizzes.length + useCaseQuizzes.length + standardsQuizzes.length} quizzes across every Learn module, Use Case, and Standards body, with an explanation for every answer.` },
   { href: "/assess", title: "Assess", body: "Eight questions about what you actually run today, mapped to a prioritized reading list." },
 ];
 

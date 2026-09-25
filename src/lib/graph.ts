@@ -2,11 +2,12 @@ import { modules } from "./content";
 import { playgroundTools } from "./playground";
 import { useCases } from "./usecases";
 import { challenges } from "./challenges";
+import { standardsBodies } from "./standards";
 
 export interface GraphNode {
   id: string;
   label: string;
-  type: "category" | "module" | "tool" | "usecase" | "challenge";
+  type: "category" | "module" | "tool" | "usecase" | "challenge" | "standard";
   category: string;
   href?: string;
   summary?: string;
@@ -84,6 +85,24 @@ export function buildGraph(): { nodes: GraphNode[]; links: GraphLink[] } {
     });
     for (const relatedSlug of c.relatedModules ?? []) {
       links.push({ source: `module:${relatedSlug}`, target: `challenge:${c.slug}` });
+    }
+  }
+
+  for (const s of standardsBodies) {
+    nodes.push({
+      id: `standard:${s.slug}`,
+      label: s.title,
+      type: "standard",
+      category: "Standards",
+      href: `/standards/${s.slug}`,
+      summary: s.summary,
+      minutes: s.minutes,
+    });
+    for (const relatedSlug of s.relatedModules) {
+      links.push({ source: `module:${relatedSlug}`, target: `standard:${s.slug}` });
+    }
+    for (const relatedUseCase of s.relatedUseCases ?? []) {
+      links.push({ source: `usecase:${relatedUseCase}`, target: `standard:${s.slug}` });
     }
   }
 

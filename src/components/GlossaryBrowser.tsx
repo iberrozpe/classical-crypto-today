@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { GlossaryTerm } from "@/lib/glossary";
 import { getModule } from "@/lib/content";
 import { getUseCase } from "@/lib/usecases";
+import { getStandardsBody } from "@/lib/standards";
 import { slugify } from "@/lib/slugify";
 
 export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
@@ -73,11 +74,14 @@ export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
                 const useCaseLinks = (t.relatedModules ?? [])
                   .map((slug) => getUseCase(slug))
                   .filter((u): u is NonNullable<typeof u> => Boolean(u));
+                const standardsLinks = (t.relatedModules ?? [])
+                  .map((slug) => getStandardsBody(slug))
+                  .filter((s): s is NonNullable<typeof s> => Boolean(s));
                 return (
                   <div key={t.term} id={slugify(t.term)} className="scroll-mt-20 border-b border-border pb-5 last:border-0">
                     <p className="font-semibold text-foreground">{t.term}</p>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.definition}</p>
-                    {(modules.length > 0 || useCaseLinks.length > 0) && (
+                    {(modules.length > 0 || useCaseLinks.length > 0 || standardsLinks.length > 0) && (
                       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                         {modules.map((m) => (
                           <Link
@@ -95,6 +99,15 @@ export default function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
                             className="text-xs font-medium text-accent underline underline-offset-4"
                           >
                             {u.title} →
+                          </Link>
+                        ))}
+                        {standardsLinks.map((s) => (
+                          <Link
+                            key={s.slug}
+                            href={`/standards/${s.slug}`}
+                            className="text-xs font-medium text-accent underline underline-offset-4"
+                          >
+                            {s.title} →
                           </Link>
                         ))}
                       </div>

@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/explore"
           className="rounded-lg border border-border p-6 transition hover:border-accent"
@@ -92,6 +92,15 @@ export default function Home() {
           <h3 className="font-semibold">Use Cases</h3>
           <p className="mt-2 text-sm text-muted">
             How those primitives combine in production — envelope encryption, PKI, OAuth2/OIDC/SAML.
+          </p>
+        </Link>
+        <Link
+          href="/standards"
+          className="rounded-lg border border-border p-6 transition hover:border-accent"
+        >
+          <h3 className="font-semibold">Standards</h3>
+          <p className="mt-2 text-sm text-muted">
+            NIST, the IETF, ISO/IEC, and OASIS — who writes the specs, and what each has actually published.
           </p>
         </Link>
         <Link

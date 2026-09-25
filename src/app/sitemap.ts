@@ -5,6 +5,8 @@ import { quizzes } from "@/lib/quiz";
 import { useCases } from "@/lib/usecases";
 import { useCaseQuizzes } from "@/lib/usecase-quiz";
 import { challenges } from "@/lib/challenges";
+import { standardsBodies } from "@/lib/standards";
+import { standardsQuizzes } from "@/lib/standards-quiz";
 
 const siteUrl = "https://classicalcryptotoday.com";
 
@@ -15,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/navigate",
     "/learn",
     "/use-cases",
+    "/standards",
     "/playground",
     "/challenges",
     "/quizzes",
@@ -66,6 +69,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteUrl}/playground/${t.slug}/how-it-works`, changeFrequency: "monthly" as const, priority: 0.5 },
   ]);
 
+  const standardsRoutes = standardsBodies.map((s) => ({
+    url: `${siteUrl}/standards/${s.slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  const standardsQuizRoutes = standardsQuizzes.map((q) => ({
+    url: `${siteUrl}/standards/${q.bodySlug}/quiz`,
+    changeFrequency: "monthly" as const,
+    priority: 0.5,
+  }));
+
   return [
     ...staticRoutes,
     ...moduleRoutes,
@@ -74,5 +89,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...useCaseQuizRoutes,
     ...challengeRoutes,
     ...playgroundRoutes,
+    ...standardsRoutes,
+    ...standardsQuizRoutes,
   ];
 }
