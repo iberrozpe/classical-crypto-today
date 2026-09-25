@@ -136,6 +136,19 @@ export default function NavigateGraph({
     return false;
   }
 
+  // With ~55+ non-category nodes, labeling everything at once makes them
+  // unreadably overlap. The category hubs stay labeled as fixed landmarks;
+  // every other label only appears once something brings it into focus —
+  // hovering/selecting it (or a neighbor), or filtering its category in via
+  // the legend — instead of all at once by default.
+  function showLabel(n: SimNode) {
+    if (n.type === "category") return true;
+    if (n.type === "tool") return false;
+    const focusActive = hoverId !== null || selectedId !== null;
+    if (!focusActive && selectedCategories.size === 0) return false;
+    return !isNodeDimmed(n);
+  }
+
   function clientToWorld(clientX: number, clientY: number) {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -255,7 +268,7 @@ export default function NavigateGraph({
             Clear
           </button>
         )}
-        <span className="ml-auto text-muted">Drag to pan · scroll to zoom · drag a node to reposition it</span>
+        <span className="ml-auto text-muted">Hover or click a node to see its name · drag to pan · scroll to zoom</span>
       </div>
 
       <div className="relative mt-3 overflow-hidden overscroll-none rounded-lg border border-border bg-surface">
@@ -308,7 +321,7 @@ export default function NavigateGraph({
                     stroke={color}
                     strokeWidth={n.type === "category" ? 2.5 : isSelected ? 3 : 1.5}
                   />
-                  {n.type !== "tool" && (
+                  {showLabel(n) && (
                     <text
                       y={-r - 6}
                       textAnchor="middle"
