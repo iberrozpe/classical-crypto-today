@@ -6,6 +6,8 @@ import { playgroundTools } from "@/lib/playground";
 import { glossaryTerms } from "@/lib/glossary";
 import { useCases } from "@/lib/usecases";
 import { challenges } from "@/lib/challenges";
+import { quizzes } from "@/lib/quiz";
+import { useCaseQuizzes } from "@/lib/usecase-quiz";
 
 export const metadata: Metadata = {
   title: "About — Classical Crypto Today",
@@ -22,6 +24,7 @@ const sections = [
   { href: "/compare", title: "Compare", body: "Side-by-side cheat sheets — RSA vs. ECC vs. Diffie-Hellman, AES modes, hash functions — for when you already know the material and just need the numbers." },
   { href: "/glossary", title: "Glossary", body: `${glossaryTerms.length} terms used across the site, defined plainly and linked back to the module that covers each one in depth.` },
   { href: "/migration-checklist", title: "Checklist", body: "A practical PQC-migration inventory for GRC and architecture teams — not a compliance audit, a starting point." },
+  { href: "/quizzes", title: "Quizzes", body: `Every knowledge check on the site in one list — ${quizzes.length + useCaseQuizzes.length} quizzes across every Learn module and Use Case, with an explanation for every answer.` },
   { href: "/assess", title: "Assess", body: "Eight questions about what you actually run today, mapped to a prioritized reading list." },
 ];
 

@@ -16,6 +16,7 @@ const STATIC_LABELS: Record<string, string> = {
   compare: "Compare",
   glossary: "Glossary",
   "migration-checklist": "Checklist",
+  quizzes: "Quizzes",
   assess: "Assess",
   navigate: "Navigate",
   references: "References",

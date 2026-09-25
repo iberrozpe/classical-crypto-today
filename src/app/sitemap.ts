@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { modules } from "@/lib/content";
 import { playgroundTools } from "@/lib/playground";
 import { quizzes } from "@/lib/quiz";
+import { useCases } from "@/lib/usecases";
+import { useCaseQuizzes } from "@/lib/usecase-quiz";
+import { challenges } from "@/lib/challenges";
 
 const siteUrl = "https://classicalcryptotoday.com";
 
@@ -11,7 +14,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/explore",
     "/navigate",
     "/learn",
+    "/use-cases",
     "/playground",
+    "/challenges",
+    "/quizzes",
     "/compare",
     "/glossary",
     "/references",
@@ -37,10 +43,36 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }));
 
+  const useCaseRoutes = useCases.map((u) => ({
+    url: `${siteUrl}/use-cases/${u.slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  const useCaseQuizRoutes = useCaseQuizzes.map((q) => ({
+    url: `${siteUrl}/use-cases/${q.useCaseSlug}/quiz`,
+    changeFrequency: "monthly" as const,
+    priority: 0.5,
+  }));
+
+  const challengeRoutes = challenges.map((c) => ({
+    url: `${siteUrl}/challenges/${c.slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
   const playgroundRoutes = playgroundTools.flatMap((t) => [
     { url: `${siteUrl}/playground/${t.slug}`, changeFrequency: "monthly" as const, priority: 0.7 },
     { url: `${siteUrl}/playground/${t.slug}/how-it-works`, changeFrequency: "monthly" as const, priority: 0.5 },
   ]);
 
-  return [...staticRoutes, ...moduleRoutes, ...quizRoutes, ...playgroundRoutes];
+  return [
+    ...staticRoutes,
+    ...moduleRoutes,
+    ...quizRoutes,
+    ...useCaseRoutes,
+    ...useCaseQuizRoutes,
+    ...challengeRoutes,
+    ...playgroundRoutes,
+  ];
 }
