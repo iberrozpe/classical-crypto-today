@@ -74,7 +74,7 @@ export const referenceGroups: ReferenceGroup[] = [
   {
     heading: "Public-key cryptography (RSA, Diffie-Hellman, ElGamal, ECC)",
     references: [
-      { title: "FIPS 186-5 — Digital Signature Standard (DSS)", publisher: "NIST", url: "https://csrc.nist.gov/pubs/fips/186/5/final", note: "Covers RSA and ECDSA signature parameters." },
+      { title: "FIPS 186-5 — Digital Signature Standard (DSS)", publisher: "NIST", url: "https://csrc.nist.gov/publications/detail/fips/186/5/final", note: "Covers RSA and ECDSA signature parameters." },
       { title: "RFC 8017 — PKCS #1: RSA Cryptography Specifications Version 2.2", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8017", note: "OAEP and PKCS#1 v1.5 padding." },
       {
         title: "SP 800-56A Rev. 3 — Recommendation for Pair-Wise Key-Establishment Using Discrete Logarithm Cryptography",
@@ -88,7 +88,7 @@ export const referenceGroups: ReferenceGroup[] = [
   {
     heading: "Hashing, signatures & key derivation",
     references: [
-      { title: "FIPS 180-4 — Secure Hash Standard (SHS)", publisher: "NIST", url: "https://csrc.nist.gov/pubs/fips/180/4/final", note: "SHA-2 family." },
+      { title: "FIPS 180-4 — Secure Hash Standard (SHS)", publisher: "NIST", url: "https://csrc.nist.gov/publications/detail/fips/180/4/final", note: "SHA-2 family." },
       { title: "FIPS 202 — SHA-3 Standard", publisher: "NIST", url: "https://csrc.nist.gov/pubs/fips/202/final" },
       { title: "RFC 2104 — HMAC: Keyed-Hashing for Message Authentication", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc2104" },
       { title: "RFC 8018 — PKCS #5: Password-Based Cryptography Specification Version 2.1", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8018", note: "PBKDF2." },
@@ -98,10 +98,10 @@ export const referenceGroups: ReferenceGroup[] = [
   {
     heading: "Protocols (TLS, certificates, JWT, SSH, Signal, WebAuthn)",
     references: [
-      { title: "RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc8446" },
+      { title: "RFC 9846 — The Transport Layer Security (TLS) Protocol Version 1.3", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc9846" },
       { title: "RFC 5280 — Internet X.509 Public Key Infrastructure Certificate and CRL Profile", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc5280" },
       { title: "RFC 6960 — X.509 Internet PKI Online Certificate Status Protocol (OCSP)", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc6960" },
-      { title: "RFC 6962 — Certificate Transparency", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc6962" },
+      { title: "RFC 9162 — Certificate Transparency Version 2.0", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc9162" },
       { title: "RFC 7519 — JSON Web Token (JWT)", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc7519" },
       { title: "RFC 7515 — JSON Web Signature (JWS)", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc7515" },
       { title: "RFC 4251 — The Secure Shell (SSH) Protocol Architecture", publisher: "IETF", url: "https://www.rfc-editor.org/rfc/rfc4251" },

@@ -63,9 +63,9 @@ export const standardsBodies: StandardsBody[] = [
           title: "The FIPS and SP 800 documents behind this site's Learn modules",
           blocks: [
             { label: "FIPS 197 — AES", detail: "The Advanced Encryption Standard itself, published 2001.", href: "https://csrc.nist.gov/pubs/fips/197/final" },
-            { label: "FIPS 180-4 — SHS (SHA-2)", detail: "The Secure Hash Standard covering the SHA-2 family.", href: "https://csrc.nist.gov/pubs/fips/180/4/final" },
+            { label: "FIPS 180-4 — SHS (SHA-2)", detail: "The Secure Hash Standard covering the SHA-2 family.", href: "https://csrc.nist.gov/publications/detail/fips/180/4/final" },
             { label: "FIPS 202 — SHA-3", detail: "SHA-3/Keccak, selected as a structural hedge alongside SHA-2, not a replacement for it.", href: "https://csrc.nist.gov/pubs/fips/202/final" },
-            { label: "FIPS 186-5 — Digital Signature Standard", detail: "Specifies DSA, RSA, and ECDSA signatures.", href: "https://csrc.nist.gov/pubs/fips/186/5/final" },
+            { label: "FIPS 186-5 — Digital Signature Standard", detail: "Specifies DSA, RSA, and ECDSA signatures.", href: "https://csrc.nist.gov/publications/detail/fips/186/5/final" },
             { label: "FIPS 203 — ML-KEM", detail: "The post-quantum key-encapsulation mechanism, finalized August 2024.", href: "https://csrc.nist.gov/pubs/fips/203/final" },
             { label: "FIPS 204 — ML-DSA", detail: "The post-quantum signature standard, finalized August 2024.", href: "https://csrc.nist.gov/pubs/fips/204/final" },
             { label: "FIPS 205 — SLH-DSA", detail: "The stateless hash-based post-quantum signature standard, finalized August 2024.", href: "https://csrc.nist.gov/pubs/fips/205/final" },
@@ -152,7 +152,7 @@ export const standardsBodies: StandardsBody[] = [
           type: "structure",
           title: "Working groups → RFCs → Learn modules",
           blocks: [
-            { label: "TLS WG — RFC 8446", detail: "TLS 1.3 and its predecessors — covered in the TLS in Practice module.", href: "https://www.rfc-editor.org/rfc/rfc8446" },
+            { label: "TLS WG — RFC 9846", detail: "TLS 1.3 and its predecessors — covered in the TLS in Practice module.", href: "https://www.rfc-editor.org/rfc/rfc9846" },
             { label: "LAMPS WG — RFC 5280", detail: "The X.509 PKIX certificate profile and related PKI specs — covered in Digital Certificates & X.509.", href: "https://www.rfc-editor.org/rfc/rfc5280" },
             { label: "OAuth WG — RFC 6749", detail: "OAuth 2.0; the related JOSE working group produces RFC 7519 (JWT) and the surrounding JSON Object Signing and Encryption specs — covered in JWT & API Auth.", href: "https://www.rfc-editor.org/rfc/rfc6749" },
             { label: "(historical) secsh WG — RFC 4253", detail: "Defines the SSH transport protocol — covered in the SSH module.", href: "https://www.rfc-editor.org/rfc/rfc4253" },

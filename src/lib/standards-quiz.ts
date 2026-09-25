@@ -139,15 +139,15 @@ export const standardsQuizzes: StandardsQuiz[] = [
       },
       {
         question: "RFC 8017 (PKCS#1 v2.2) obsoletes which earlier RFC?",
-        options: ["RFC 8446", "RFC 3447", "RFC 6749", "RFC 5280"],
+        options: ["RFC 9846", "RFC 3447", "RFC 6749", "RFC 5280"],
         correctIndex: 1,
         explanation: "RFC 8017 (2016) obsoletes RFC 3447 (PKCS#1 v2.1, 2003), which itself obsoleted RFC 2437 — three RFC numbers tracking one continuously evolving specification.",
       },
       {
-        question: "Which IETF working group produced RFC 8446, the TLS 1.3 specification?",
+        question: "Which IETF working group produced RFC 9846, the TLS 1.3 specification?",
         options: ["LAMPS WG", "OAuth WG", "TLS WG", "JOSE WG"],
         correctIndex: 2,
-        explanation: "The TLS working group is responsible for RFC 8446 and its predecessors, covered in the TLS in Practice module.",
+        explanation: "The TLS working group is responsible for RFC 9846 and its predecessors, covered in the TLS in Practice module.",
       },
       {
         question: "Which RFC defines the X.509 certificate profile used across TLS and PKI?",
@@ -185,7 +185,7 @@ export const standardsQuizzes: StandardsQuiz[] = [
       },
       {
         question: "Which RFC defines OAuth 2.0?",
-        options: ["RFC 6749", "RFC 7519", "RFC 8446", "RFC 4253"],
+        options: ["RFC 6749", "RFC 7519", "RFC 9846", "RFC 4253"],
         correctIndex: 0,
         explanation: "RFC 6749 is the OAuth 2.0 Authorization Framework, from the OAuth working group — RFC 7519 is JWT, a related but separate specification.",
       },
@@ -370,9 +370,9 @@ export const standardsQuizzes: StandardsQuiz[] = [
       },
       {
         question: "Which of these is an OASIS specification covered on this site?",
-        options: ["RFC 8446 (TLS 1.3)", "FIPS 197 (AES)", "SAML 2.0", "ISO/IEC 27001"],
+        options: ["RFC 9846 (TLS 1.3)", "FIPS 197 (AES)", "SAML 2.0", "ISO/IEC 27001"],
         correctIndex: 2,
-        explanation: "SAML 2.0 is an OASIS Standard. RFC 8446 is IETF, FIPS 197 is NIST, and ISO/IEC 27001 is ISO/IEC — one from each of the four bodies covered on this page.",
+        explanation: "SAML 2.0 is an OASIS Standard. RFC 9846 is IETF, FIPS 197 is NIST, and ISO/IEC 27001 is ISO/IEC — one from each of the four bodies covered on this page.",
       },
     ],
   },

@@ -2521,7 +2521,7 @@ export const modules: Module[] = [
         heading: "0-RTT data: the speed comes with a real trade-off",
         body: [
           "TLS 1.3's most aggressive optimization lets a resuming client send encrypted application data in its very first flight — before the handshake even finishes — called 0-RTT (zero round-trip time) or \"early data.\" The catch, spelled out explicitly in the TLS 1.3 spec, is that this early data has no forward secrecy and, critically, no replay protection: unlike the rest of the handshake, nothing fresh from the server has been mixed into the keys protecting that first flight, so an attacker who captures a 0-RTT packet can resend it verbatim and have it accepted again.",
-          "This is exactly why RFC 8446 restricts 0-RTT data to idempotent requests — operations safe to perform more than once, like a GET request — and explicitly warns against using it for anything that changes state, like a purchase or a fund transfer, unless the application layer adds its own replay defense on top.",
+          "This is exactly why RFC 9846 restricts 0-RTT data to idempotent requests — operations safe to perform more than once, like a GET request — and explicitly warns against using it for anything that changes state, like a purchase or a fund transfer, unless the application layer adds its own replay defense on top.",
         ],
         math: [
           { expr: "\\text{full handshake: 1 RTT before app data} \\qquad \\text{0-RTT resumption: 0 RTT before app data}" },
@@ -2533,7 +2533,7 @@ export const modules: Module[] = [
             hint: "The original request plus every successful replay each triggers a charge.",
             placeholder: "times charged",
             answer: "6",
-            explanation: "1 original request + 5 replays = 6 charges — exactly the failure mode RFC 8446 warns about. This is precisely why 0-RTT is restricted to idempotent operations by default, and why any state-changing endpoint that accepts it needs its own replay defense (like a one-time nonce) on top of what TLS provides.",
+            explanation: "1 original request + 5 replays = 6 charges — exactly the failure mode RFC 9846 warns about. This is precisely why 0-RTT is restricted to idempotent operations by default, and why any state-changing endpoint that accepts it needs its own replay defense (like a one-time nonce) on top of what TLS provides.",
           },
         ],
       },
