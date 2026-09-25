@@ -240,6 +240,8 @@ export default function NavigateGraph({
   const selected = useMemo(() => nodes.find((n) => n.id === selectedId) ?? null, [nodes, selectedId]);
 
   const focusId = hoverId ?? selectedId;
+  const focusNode = useMemo(() => nodes.find((n) => n.id === focusId) ?? null, [nodes, focusId]);
+  const focusColor = focusNode ? (CATEGORY_COLORS[focusNode.category] ?? "var(--accent)") : "var(--accent)";
 
   const connectedIds = useMemo(() => {
     if (!focusId) return null;
@@ -434,7 +436,7 @@ export default function NavigateGraph({
                   y1={l.source.y}
                   x2={l.target.x}
                   y2={l.target.y}
-                  stroke={isFocusLink ? "var(--accent)" : "var(--border)"}
+                  stroke={isFocusLink ? focusColor : "var(--border)"}
                   strokeWidth={isFocusLink ? 2.5 : 1}
                   opacity={dimmed ? 0.15 : isFocusLink ? 1 : 0.6}
                 />
