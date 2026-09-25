@@ -52,6 +52,35 @@ function typeLabel(type: GraphNode["type"]) {
   return "Playground tool";
 }
 
+function labelText(n: GraphNode) {
+  if (n.type === "category") return n.label;
+  return n.label.length > 26 ? n.label.slice(0, 24) + "…" : n.label;
+}
+
+// The collision force below only keeps node *circles* apart — a label can be
+// far wider than its circle, so two nodes with plenty of circle clearance
+// can still end up with overlapping labels once both are visible at once
+// (hovering a node reveals every neighbor's label together). This estimates
+// each node's rendered label as a rectangle, for a post-layout pass that
+// nudges colliding pairs apart.
+function labelBox(n: SimNode) {
+  const r = radiusFor(n.type);
+  const isCategory = n.type === "category";
+  const fontSize = isCategory ? 13 : 10;
+  // Rough average glyph width for the given size/weight — not exact per the
+  // real font metrics, but close enough to catch the overlaps that matter.
+  const charWidth = fontSize * (isCategory ? 0.62 : 0.58);
+  const text = labelText(n);
+  const width = text.length * charWidth;
+  const height = fontSize + 4;
+  const bottom = (n.y ?? 0) - r - 6;
+  return { left: (n.x ?? 0) - width / 2, right: (n.x ?? 0) + width / 2, top: bottom - height, bottom };
+}
+
+function labelBoxesOverlap(a: { left: number; right: number; top: number; bottom: number }, b: typeof a) {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
 // setPointerCapture can throw (e.g. NotFoundError) if the browser's own
 // gesture/scroll recognizer has already invalidated the pointer session by
 // the time this runs — confirmed to happen in real drags, not just theory.
@@ -136,6 +165,34 @@ export default function NavigateGraph({
 
     for (let i = 0; i < 350; i++) sim.tick();
 
+    // Manual label-declutter pass, run after the physics settle: nudge any
+    // pair of nodes whose estimated label boxes overlap apart vertically,
+    // repeating until clear (or a max iteration count, as a safety exit).
+    // Every node is a candidate — two nodes don't need a direct link to end
+    // up simultaneously visible (e.g. both revealed by the same category
+    // filter, or just close together while one is hovered).
+    const LABEL_DECLUTTER_ITERATIONS = 300;
+    const NUDGE_STEP = 3;
+    for (let iter = 0; iter < LABEL_DECLUTTER_ITERATIONS; iter++) {
+      let anyOverlap = false;
+      for (let i = 0; i < simNodes.length; i++) {
+        for (let j = i + 1; j < simNodes.length; j++) {
+          const a = simNodes[i];
+          const b = simNodes[j];
+          if (!labelBoxesOverlap(labelBox(a), labelBox(b))) continue;
+          anyOverlap = true;
+          if ((a.y ?? 0) <= (b.y ?? 0)) {
+            a.y = (a.y ?? 0) - NUDGE_STEP;
+            b.y = (b.y ?? 0) + NUDGE_STEP;
+          } else {
+            b.y = (b.y ?? 0) - NUDGE_STEP;
+            a.y = (a.y ?? 0) + NUDGE_STEP;
+          }
+        }
+      }
+      if (!anyOverlap) break;
+    }
+
     // Fit the initial view to every node's bounding box, padded for their
     // radius and label text, instead of a fixed transform that assumes the
     // layout always settles within the viewBox — d3-force's spread varies
@@ -215,7 +272,6 @@ export default function NavigateGraph({
   // the legend — instead of all at once by default.
   function showLabel(n: SimNode) {
     if (n.type === "category") return true;
-    if (n.type === "tool") return false;
     const focusActive = hoverId !== null || selectedId !== null;
     if (!focusActive && selectedCategories.size === 0) return false;
     return !isNodeDimmed(n);
@@ -413,7 +469,7 @@ export default function NavigateGraph({
                       className="pointer-events-none"
                       style={{ textTransform: n.type === "category" ? "uppercase" as const : undefined, letterSpacing: n.type === "category" ? "0.05em" : undefined }}
                     >
-                      {n.type === "category" ? n.label : n.label.length > 26 ? n.label.slice(0, 24) + "…" : n.label}
+                      {labelText(n)}
                     </text>
                   )}
                 </g>
